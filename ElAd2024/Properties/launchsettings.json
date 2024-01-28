@@ -1,0 +1,10 @@
+﻿{
+    "profiles": {
+      "ElAd2024 (Package)": {
+        "commandName": "MsixPackage"
+      },
+      "ElAd2024 (Unpackaged)": {
+        "commandName": "Project"
+      }
+    }
+}
