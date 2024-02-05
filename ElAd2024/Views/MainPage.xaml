@@ -8,6 +8,7 @@
     xmlns:models="using:ElAd2024.Models"
     xmlns:telerikDataVisualization="using:Telerik.UI.Xaml.Controls.DataVisualization"
     xmlns:telerikChart="using:Telerik.UI.Xaml.Controls.Chart"
+    xmlns:telerikPrimitives="using:Telerik.UI.Xaml.Controls.Primitives"
     xmlns:telerikCharting="using:Telerik.Charting"
     xmlns:converters="using:ElAd2024.Converters"
     mc:Ignorable="d">
@@ -23,6 +24,7 @@
         <converters:PhaseToBrushConverter x:Key="PhaseToBrushConverter"/>
         <converters:HighVoltageoStringConverter x:Key="HighVoltageoStringConverter"/>
         <converters:BoolToGreenRedColorConverter x:Key="BoolToGreenRedColorConverter"/>
+        <converters:BoolToOpacityConverter x:Key="BoolToOpacityConverter"/>
 
         <!-- Common TextBlock Style -->
         <Style x:Key="HeaderGridTextBlockStyle" TargetType="TextBlock">
@@ -44,6 +46,13 @@
             <Setter Property="Margin" Value="{StaticResource SmallTopBottomMargin}"/>
             <Setter Property="HorizontalAlignment" Value="Stretch"/>
         </Style>
+        <Style x:Key="RadHexHubTileStyle" TargetType="telerikPrimitives:RadHexHubTile">
+            <Setter Property="BorderBrush" Value="#99FFFFFF"/>
+            <Setter Property="StrokeThickness" Value="4"/>
+            <Setter Property="Width" Value="57"/>
+            <Setter Property="Height" Value="50"/>
+        </Style>
+
 
         <DataTemplate x:Key="TestsListTemplate"
                       x:DataType="models:Batch">
@@ -101,6 +110,37 @@
             </Grid>
         </DataTemplate>
 
+        <DataTemplate x:Key="StepsTemplate" x:DataType="models:TestStep">
+            <Grid>
+                <telerikPrimitives:RadCustomHubTile
+                    IsFrozen="{x:Bind IsFrozen}"
+                    UpdateInterval ="0:0:0.9"
+                    Width="80"
+                    Height="80"
+                    Margin="-10 4"
+                    >
+                    <telerikPrimitives:RadCustomHubTile.FrontContent>
+                        <Border Background="{x:Bind Background}" Opacity="{x:Bind IsFrozen, Converter={StaticResource BoolToOpacityConverter}}">
+                        <Grid>
+                                <FontIcon Glyph="{x:Bind Icon, Mode=OneWay}" FontSize="16" Foreground="{x:Bind Foreground}" Margin="0 -50 0 0"/>
+                                <TextBlock Foreground="{x:Bind Foreground}" Text="{x:Bind Title}" FontSize="12" FontWeight="Bold" HorizontalAlignment="Center"
+                                           VerticalAlignment="Center" Margin="0 25 0 0" TextAlignment="Center"
+                                           />
+                        </Grid>
+                        </Border>
+                    </telerikPrimitives:RadCustomHubTile.FrontContent>
+
+                    <telerikPrimitives:RadCustomHubTile.BackContent>
+                        <Border Background="{x:Bind Background}">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center" >
+                                <Image Source="{x:Bind ImageSource, Mode=OneWay}" />
+                            </StackPanel>
+                        </Border>
+                    </telerikPrimitives:RadCustomHubTile.BackContent>
+                </telerikPrimitives:RadCustomHubTile>
+            </Grid>
+        </DataTemplate>
+
     </Page.Resources>
 
     <Grid x:Name="ContentArea">
@@ -141,11 +181,11 @@
                             <ColumnDefinition Width="180" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
-                        <ToggleSwitch Grid.Column="1" Header="Enviromental Device" IsOn="{x:Bind ViewModel.IsEnvActive, Mode=OneWay}" HorizontalAlignment="Left" Margin="0 0 10 0"/>
-                        <ToggleSwitch Grid.Column="2" Header="Scale Device" IsOn="{x:Bind ViewModel.IsScaleActive, Mode=OneWay}" HorizontalAlignment="Left" Margin="0 0 10 0"/>
-                        <ToggleSwitch Grid.Column="3" Header="Pad Device" IsOn="{x:Bind ViewModel.IsPadActive, Mode=OneWay}" HorizontalAlignment="Left" Margin="0 0 10 0"/>
-                        <ToggleSwitch Grid.Column="4" Header="Robot" IsOn="{x:Bind ViewModel.IsRobotActive, Mode=OneWay}" HorizontalAlignment="Left" Margin="0 0 10 0"/>
-                        <ToggleSwitch Grid.Column="5" Header="Camera Device" IsOn="{x:Bind ViewModel.IsCameraActive, Mode=OneWay}" HorizontalAlignment="Left" Margin="0 0 10 0"/>
+                        <ToggleSwitch Grid.Column="1" Header="Enviromental Device" IsOn="{x:Bind ViewModel.EnvDevice.IsConnected, Mode=OneWay}" HorizontalAlignment="Left" Margin="0 0 10 0"/>
+                        <ToggleSwitch Grid.Column="2" Header="Scale Device" IsOn="{x:Bind ViewModel.ScaleDevice.IsConnected, Mode=OneWay}" HorizontalAlignment="Left" Margin="0 0 10 0"/>
+                        <ToggleSwitch Grid.Column="3" Header="Pad Device" IsOn="{x:Bind ViewModel.PadDevice.IsConnected, Mode=OneWay}" HorizontalAlignment="Left" Margin="0 0 10 0"/>
+                        <ToggleSwitch Grid.Column="4" Header="Robot" IsOn="{x:Bind ViewModel.RobotDevice.IsConnected, Mode=OneWay}" HorizontalAlignment="Left" Margin="0 0 10 0"/>
+                        <ToggleSwitch Grid.Column="5" Header="Camera Device" IsOn="{x:Bind ViewModel.CameraDevice.IsConnected, Mode=OneWay}" HorizontalAlignment="Left" Margin="0 0 10 0"/>
                     </Grid>
                     <StackPanel Orientation="Horizontal"  HorizontalAlignment="Center">
                         <Grid Margin="{StaticResource MediumLeftRightMargin}" >
@@ -171,7 +211,7 @@
                                 <TextBlock Text="Temperature" HorizontalAlignment="Center"/>
                                 <TextBlock Text="{x:Bind ViewModel.EnvDevice.Temperature, Mode=OneWay, Converter={StaticResource FloatToTemperatureStringConverter}}" 
                                            Foreground="{x:Bind ViewModel.EnvDevice.Temperature, Mode=OneWay, Converter={StaticResource TemperatureToBrushConverter}}"
-                                    FontSize="20" HorizontalAlignment="Center"/>                            
+                                    FontSize="20" HorizontalAlignment="Center"/>
                             </StackPanel>
                         </Grid>
 
@@ -201,7 +241,7 @@
                                     FontSize="20" HorizontalAlignment="Center"/>
                             </StackPanel>
                         </Grid>
-                     
+
 
                         <StackPanel Margin="{StaticResource MediumLeftRightMargin}">
                             <TextBlock Text="{x:Bind ViewModel.ScaleDevice.Weight, Mode=OneWay, Converter={StaticResource IntToGramsStringConverter}}"
@@ -213,11 +253,11 @@
                         </StackPanel>
 
                         <MediaPlayerElement Width="400"
-            Source="{x:Bind ViewModel.CameraService.PlaybackSource, Mode=OneWay}"
+            Source="{x:Bind ViewModel.CameraDevice.PlaybackSource, Mode=OneWay}"
             Stretch="Uniform"
             AutoPlay="True"
             VerticalAlignment="Bottom"/>
-                        
+
                     </StackPanel>
                 </StackPanel>
             </Expander>
@@ -228,62 +268,72 @@
                 <Expander.Header>
                     <TextBlock Text="{x:Bind ViewModel.SelectedFullName, Mode=OneWay}" Style="{ThemeResource  PageTitleStyle}" Margin="{StaticResource MediumBottomMargin}" Foreground="Orange"/>
                 </Expander.Header>
-                <StackPanel>
+                <StackPanel HorizontalAlignment="Stretch">
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Stretch">
                         <StackPanel Width="170">
-                            <NumberBox Header="Duration Phase 1 [ms]" Value="{x:Bind ViewModel.DurationPhase1, Mode=TwoWay}" Maximum="{x:Bind ViewModel.MaxDuration}" Style="{StaticResource NumberBoxStyle}" />
-                            <NumberBox Header="High Voltage Phase 1 [V]" Value="{x:Bind ViewModel.HighVoltagePhase1, Mode=TwoWay}" Maximum="{x:Bind ViewModel.MaxHighVoltage}" Style="{StaticResource NumberBoxStyle}" />
-                            <NumberBox Header="Duration Phase 2 [ms]" Value="{x:Bind ViewModel.DurationPhase2, Mode=TwoWay}" Minimum ="300" Maximum="{x:Bind ViewModel.MaxDuration}" Style="{StaticResource NumberBoxStyle}" />
+                            <NumberBox Header="Duration Phase 1 [ms]" Value="{x:Bind ViewModel.Parameters.DurationPhase1, Mode=TwoWay}" Maximum="{x:Bind ViewModel.Parameters.MaxDuration}" Style="{StaticResource NumberBoxStyle}" />
+                            <NumberBox Header="High Voltage Phase 1 [V]" Value="{x:Bind ViewModel.Parameters.HighVoltagePhase1, Mode=TwoWay}" Maximum="{x:Bind ViewModel.Parameters.MaxHighVoltage}" Style="{StaticResource NumberBoxStyle}" />
+                            <NumberBox Header="Duration Phase 2 [ms]" Value="{x:Bind ViewModel.Parameters.DurationPhase2, Mode=TwoWay}" Minimum ="300" Maximum="{x:Bind ViewModel.Parameters.MaxDuration}" Style="{StaticResource NumberBoxStyle}" />
                         </StackPanel>
                         <StackPanel Width="170" Margin="{StaticResource MediumLeftRightMargin}">
-                            <NumberBox Header="Duration Phase 3 [ms]" Value="{x:Bind ViewModel.DurationPhase3, Mode=TwoWay}" Maximum="{x:Bind ViewModel.MaxDuration}" Style="{StaticResource NumberBoxStyle}" />
-                            <NumberBox Header="High Voltage Phase 3 [V]" Value="{x:Bind ViewModel.HighVoltagePhase3, Mode=TwoWay}" Maximum="{x:Bind ViewModel.MaxHighVoltage}" Style="{StaticResource NumberBoxStyle}" />
-                            <NumberBox Header="Duration Phase 4 [ms]" Value="{x:Bind ViewModel.DurationPhase4, Mode=TwoWay}" Minimum ="3000" Maximum="30000" Style="{StaticResource NumberBoxStyle}" />
+                            <NumberBox Header="Duration Phase 3 [ms]" Value="{x:Bind ViewModel.Parameters.DurationPhase3, Mode=TwoWay}" Maximum="{x:Bind ViewModel.Parameters.MaxDuration}" Style="{StaticResource NumberBoxStyle}" />
+                            <NumberBox Header="High Voltage Phase 3 [V]" Value="{x:Bind ViewModel.Parameters.HighVoltagePhase3, Mode=TwoWay}" Maximum="{x:Bind ViewModel.Parameters.MaxHighVoltage}" Style="{StaticResource NumberBoxStyle}" />
+                            <NumberBox Header="Duration Phase 4 [ms]" Value="{x:Bind ViewModel.Parameters.DurationPhase4, Mode=TwoWay}" Minimum ="3000" Maximum="30000" Style="{StaticResource NumberBoxStyle}" />
                         </StackPanel>
                         <StackPanel Width="170">
                             <StackPanel Margin="0 12 0 0">
                                 <TextBlock Text="Initail polarization"/>
-                                <ToggleSwitch OffContent="-" OnContent="+" FontSize="24" IsOn="{x:Bind ViewModel.IsStartPolarizationPlus, Mode=TwoWay}"/>
+                                <ToggleSwitch OffContent="-" OnContent="+" FontSize="24" IsOn="{x:Bind ViewModel.Parameters.IsStartPolarizationPlus, Mode=TwoWay}"/>
                             </StackPanel>
                             <StackPanel Margin="0 24 0 0">
                                 <TextBlock Text="Work mode"/>
-                                <ToggleSwitch OffContent="Keep" OnContent="Switch" IsOn="{x:Bind ViewModel.IsSwitchWorkMode, Mode=TwoWay}"/>
+                                <ToggleSwitch OffContent="Keep" OnContent="Switch" IsOn="{x:Bind ViewModel.Parameters.IsSwitchWorkMode, Mode=TwoWay}"/>
                             </StackPanel>
                             <StackPanel  Margin="0 12 0 0">
-                                <NumberBox Header="Change every" Value="{x:Bind ViewModel.ChangePolarizationStep, Mode=TwoWay}" SmallChange="1" Minimum="1" Maximum="100" Style="{StaticResource NumberBoxStyle}" 
-                                           Visibility="{x:Bind ViewModel.IsSwitchWorkMode, Mode=TwoWay}"
+                                <NumberBox Header="Change every" Value="{x:Bind ViewModel.Parameters.ChangePolarizationStep, Mode=TwoWay}" SmallChange="1" Minimum="1" Maximum="100" Style="{StaticResource NumberBoxStyle}" 
+                                           Visibility="{x:Bind ViewModel.Parameters.IsSwitchWorkMode, Mode=OneWay}"
                                            />
                             </StackPanel>
                         </StackPanel>
                         <StackPanel Width="170">
-                            <NumberBox Header="Load Force [N]" Value="{x:Bind ViewModel.LoadForce, Mode=TwoWay}" SmallChange="1" Minimum="1" Maximum="30" Style="{StaticResource NumberBoxStyle}" />
-                            <NumberBox Header="Tests Number" Value="{x:Bind ViewModel.TestsNumber, Mode=TwoWay}" SmallChange="1" Minimum="1" Maximum="100" Style="{StaticResource NumberBoxStyle}" />
+                            <NumberBox Header="Load Force [N]" Value="{x:Bind ViewModel.Parameters.LoadForce, Mode=TwoWay}" SmallChange="1" Minimum="1" Maximum="30" Style="{StaticResource NumberBoxStyle}" />
+                            <NumberBox Header="Tests Number" Value="{x:Bind ViewModel.Parameters.Count, Mode=TwoWay}" SmallChange="1" Minimum="1" Maximum="100" Style="{StaticResource NumberBoxStyle}" />
+                            <CheckBox IsChecked="{x:Bind ViewModel.Parameters.AutoRegulationHV, Mode=TwoWay}" Margin="20 40 0 0">Auto regulation HV</CheckBox>
                         </StackPanel>
                     </StackPanel>
-                    <StackPanel Orientation="Horizontal">
-
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <ListView ItemsSource="{x:Bind ViewModel.Steps, Mode=OneWay}" ItemTemplate="{StaticResource StepsTemplate}"
+                                  HorizontalAlignment="Stretch" VerticalAlignment="Top" HorizontalContentAlignment="Stretch"
+                                  ScrollViewer.HorizontalScrollMode="Enabled" ScrollViewer.HorizontalScrollBarVisibility="Hidden"
+                                  >
+                            <ListView.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <ItemsWrapGrid Orientation="Horizontal" MaximumRowsOrColumns="7"/>
+                                </ItemsPanelTemplate>
+                            </ListView.ItemsPanel>
+                        </ListView>
                     </StackPanel>
                 </StackPanel>
-                
-                </Expander>
-            
+
+            </Expander>
+
             <!-- Plot Area -->
             <Expander IsExpanded="True" HorizontalAlignment="Stretch">
                 <Expander.Header>
                     <TextBlock Text="Plot Area" Style="{ThemeResource  PageTitleStyle}" Margin="{StaticResource MediumBottomMargin}" Foreground="Orange"/>
                 </Expander.Header>
                 <StackPanel>
-                <StackPanel HorizontalAlignment="Stretch">
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Stretch">
-                        <Grid Width="600" ColumnSpacing="30">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="*" />
-                            </Grid.RowDefinitions>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" MaxWidth="50"/>
-                                <ColumnDefinition Width="*" MaxWidth="150"/>
-                                <ColumnDefinition Width="*" MaxWidth="150"/>
+                    <StackPanel HorizontalAlignment="Stretch">
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Stretch">
+                            <Grid Width="600" ColumnSpacing="30">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="*" />
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" MaxWidth="50"/>
+                                    <ColumnDefinition Width="*" MaxWidth="150"/>
+                                    <ColumnDefinition Width="*" MaxWidth="150"/>
                                     <ColumnDefinition Width="*" MaxWidth="150"/>
                                     <ColumnDefinition Width="*" MaxWidth="150"/>
                                 </Grid.ColumnDefinitions>
@@ -311,8 +361,8 @@
                                         Style="{ThemeResource CellGridTextBlockStyle}"/>
 
                             </Grid>
+                        </StackPanel>
                     </StackPanel>
-                </StackPanel>
                     <telerikChart:RadCartesianChart PaletteName="DefaultDark" Height="300" x:Name="myChart">
                         <telerikChart:RadCartesianChart.HorizontalAxis>
                             <telerikChart:CategoricalAxis VerticalLocation="Bottom" Foreground="Transparent" Visibility="Visible" TickThickness="1"/>
@@ -379,12 +429,12 @@
                     </telerikChart:RadCartesianChart>
                 </StackPanel>
             </Expander>
-            
 
 
 
 
-            
+
+
             <StackPanel Orientation="Horizontal" Width="400" HorizontalAlignment="Left">
                 <Button Width="200"
                     Content="Pad Start"

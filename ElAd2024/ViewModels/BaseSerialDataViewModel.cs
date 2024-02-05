@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using CommunityToolkit.Mvvm.ComponentModel;
+using ElAd2024.Contracts.ViewModels;
 using ElAd2024.Models;
 using ElAd2024.Services;
 
@@ -7,7 +8,6 @@ namespace ElAd2024.ViewModels;
 public partial class BaseSerialDataViewModel(SerialPortInfo serialPortInfo) : ObservableRecipient, IDisposable
 {
     protected readonly SerialPortManagerService deviceService = new();
-
     public SerialPortInfo PortInfo { get; set; } = serialPortInfo ?? throw new ArgumentNullException(nameof(serialPortInfo), "SerialPortInfo cannot be null.");
     [ObservableProperty] private bool isConnected = false;
     [ObservableProperty] private string receivedData = string.Empty;

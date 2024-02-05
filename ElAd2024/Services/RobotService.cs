@@ -8,9 +8,10 @@ using HtmlAgilityPack;
 using System.Text.RegularExpressions;
 using System.Text.Json;
 using System.Globalization;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace ElAd2024.Services;
-public class RobotService : IRobotService
+public partial class RobotService(string IPAddress) : ObservableRecipient, IRobotService
 {
     #region Fields
     private string connectionResult = string.Empty;
@@ -20,23 +21,22 @@ public class RobotService : IRobotService
     #endregion
 
     #region Properties
-    public bool IsConnected => PingAsync() || Connect();
-    public string IPAddress
+    public async Task<bool> IsConnectedAsync()
     {
-        get; set;
+        return await PingAsync() || await ConnectAsync();
     }
+    [ObservableProperty] private bool isConnected = false;
+    public string IPAddress { get; set; } = IPAddress;
     public List<string> FanucVisions { get; set; } = [];
     public string RobotVistionURL() => $"http://{IPAddress}/frh/vision/vrfrmn.stm";
-    #endregion
 
+    #endregion
     #region Constructors
-    public RobotService(string IPAddress)
+
+    public async Task InitializeAsync()
     {
-        this.IPAddress = IPAddress;
-        if (IsConnected)
-        {
-            GetFanucVisions();
-        }
+        Debug.WriteLine($"RobotService initialized. Connecting status: {IsConnected}.");
+        await Task.CompletedTask;
     }
     #endregion
 
@@ -45,15 +45,17 @@ public class RobotService : IRobotService
     public void GetFanucVisions() => FanucVisions = FanucData<string>.GetVisions(IPAddress);
 
 
-    public bool Connect()
+    public async Task<bool> ConnectAsync()
     {
+        IsConnected = await PingAsync();
         AppNotificationManager.Default.Show(
             new AppNotificationBuilder()
-            .AddText(PingAsync() ? $"Robot Online!" : $"Robot offline!")
+            .AddText(await PingAsync() ? $"Robot Online!" : $"Robot offline!")
             .AddText(connectionResult)
             .BuildNotification()
         );
-        return PingAsync();
+        GetFanucVisions();
+        return IsConnected;
     }
 
 
@@ -117,13 +119,14 @@ public class RobotService : IRobotService
 
     private static bool IsIndexInRange(int index, int min, int max) => index < min || index > max ? throw new ArgumentOutOfRangeException(nameof(index)) : true;
 
-    private static async Task<Response<T>?> GetValue<T>(string url)
+    private static readonly JsonSerializerOptions GetValueJsonSerializerOptions = new() { PropertyNameCaseInsensitive = true };
+private static async Task<Response<T>?> GetValue<T>(string url)
     {
         try
         {
             var response = await new HttpClient().GetAsync(url).ConfigureAwait(false);
             return response.IsSuccessStatusCode ?
-                JsonSerializer.Deserialize<Response<T>>(await response.Content.ReadAsStringAsync(), new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) :
+                JsonSerializer.Deserialize<Response<T>>(await response.Content.ReadAsStringAsync(), GetValueJsonSerializerOptions) :
                 null;
         }
         catch
@@ -143,7 +146,7 @@ public class RobotService : IRobotService
             return false;
         }
     }
-    private bool PingAsync()
+    private async Task<bool> PingAsync()
     {
         var ping = new Ping();
         PingReply? reply;
@@ -152,7 +155,7 @@ public class RobotService : IRobotService
         {
             try
             {
-                reply = ping.Send($"{IPAddress}", pingTimeout);
+                reply = await ping.SendPingAsync($"{IPAddress}", pingTimeout);
             }
             catch (Exception ex)
             {
@@ -171,7 +174,7 @@ public class RobotService : IRobotService
             {
                 response.AppendLine(reply.Status.ToString());
                 response.AppendLine($"Attempts: {counter + 1}");
-                Task.Delay(1000);
+                await Task.Delay(1000);
             }
             connectionResult = response.ToString();
         } while (++counter < pingAttempts && reply.Status != IPStatus.Success);

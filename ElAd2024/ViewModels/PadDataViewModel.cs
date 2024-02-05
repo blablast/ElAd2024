@@ -10,7 +10,10 @@ namespace ElAd2024.ViewModels;
 public partial class PadDataViewModel : BaseSerialDataViewModel
 {
     private readonly uint dataCollectionSize;
-    public ObservableCollection<HVPlot> ChartDataCollection { get; set; }
+    public ObservableCollection<HVPlot> ChartDataCollection
+    {
+        get; set;
+    }
 
     [ObservableProperty] private int? highVoltage;
     [ObservableProperty] private byte phaseNumber;
@@ -34,6 +37,16 @@ public partial class PadDataViewModel : BaseSerialDataViewModel
             ChartDataCollection.Add(new HVPlot { ElapsedTime = (i - dataCollectionSize + 1), PhaseNumber = 0 });
         }
     }
+
+    public async Task Setup(List<(int Number, uint Value)> parameters)
+    {
+        foreach (var (Number, Value) in parameters)
+        {
+            await SendDataAsync($"SET {Number} {Value}");
+        }
+    }
+
+
     public async Task StartCycle()
     {
         InitializeChartDataCollection();

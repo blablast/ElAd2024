@@ -18,8 +18,14 @@ public class SerialPortManagerService
 
     private CancellationTokenSource? cancellationTokenSource;
 
-    public SerialPortInfo? PortInfo { get; set; }
-    public SerialDevice? Device { get; set; }
+    public SerialPortInfo? PortInfo
+    {
+        get; set;
+    }
+    public SerialDevice? Device
+    {
+        get; set;
+    }
     public uint CountBytes { get; set; } = 1024;
 
     public static async Task<List<SerialPortInfo>> GetAvailableSerialPortsAsync()
@@ -40,7 +46,7 @@ public class SerialPortManagerService
                     PortNumber = byte.Parse(serialPort.PortName.Replace("COM", ""))
                 };
 
-                
+
                 serialPort.CopyTo(newPort);
                 ports.Add(newPort);
             }
@@ -121,9 +127,16 @@ public class SerialPortManagerService
     }
     public void CloseSerialPort()
     {
-        cancellationTokenSource?.Cancel();
-        cancellationTokenSource?.Dispose();
-        cancellationTokenSource = null;
+        try
+        {
+            cancellationTokenSource?.Cancel();
+            cancellationTokenSource?.Dispose();
+            cancellationTokenSource = null;
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine("CloseSerialPort: Exception: " + ex.Message);
+        }
 
         dataWriter?.DetachStream();
         dataWriter?.Dispose();

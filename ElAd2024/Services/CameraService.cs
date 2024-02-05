@@ -22,6 +22,7 @@ public partial class CameraService : ObservableRecipient
     public MediaCapture? mediaCapture;
     private LowLagMediaRecording? mediaRecording;
 
+    [ObservableProperty] private bool isConnected = false;
     [ObservableProperty] private bool isRecording = false;
     [ObservableProperty] private string fileName = "video.mp4";
     [ObservableProperty] private int cameraNumber = 0;
@@ -83,7 +84,8 @@ public partial class CameraService : ObservableRecipient
     }
     public async Task PreviewCamera()
     {
-        ArgumentNullException.ThrowIfNull(SelectedMediaFrameSourceGroup);
+        IsConnected = false;
+       ArgumentNullException.ThrowIfNull(SelectedMediaFrameSourceGroup);
         mediaCapture = new MediaCapture();
         await mediaCapture.InitializeAsync(new MediaCaptureInitializationSettings()
         {
@@ -97,6 +99,7 @@ public partial class CameraService : ObservableRecipient
         // Set the MediaPlayerElement's Source property to the MediaSource for the mediaCapture.
         PlaybackSource = MediaSource.CreateFromMediaFrameSource(
             mediaCapture.FrameSources[SelectedMediaFrameSourceGroup.SourceInfos[0].Id]);
+        IsConnected = true;
     }
 
 

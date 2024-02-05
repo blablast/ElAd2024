@@ -20,7 +20,8 @@ public interface IRobotService
     bool SetRegister(int index, double value);
     bool SetRegister(int index, string value);
 
-    bool Connect();
+    Task<bool> IsConnectedAsync();
+    Task<bool> ConnectAsync();
     void ChangeOverride(int value);
     public PositionXYZWPR CurrentPosition();
     string RobotVistionURL();
