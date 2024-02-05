@@ -8,16 +8,10 @@ using Microsoft.Windows.AppNotifications;
 
 namespace ElAd2024.Activation;
 
-public class AppNotificationActivationHandler : ActivationHandler<LaunchActivatedEventArgs>
+public class AppNotificationActivationHandler(INavigationService navigationService, IAppNotificationService notificationService) : ActivationHandler<LaunchActivatedEventArgs>
 {
-    private readonly INavigationService _navigationService;
-    private readonly IAppNotificationService _notificationService;
-
-    public AppNotificationActivationHandler(INavigationService navigationService, IAppNotificationService notificationService)
-    {
-        _navigationService = navigationService;
-        _notificationService = notificationService;
-    }
+    private readonly INavigationService navigationService = navigationService;
+    private readonly IAppNotificationService notificationService = notificationService;
 
     protected override bool CanHandleInternal(LaunchActivatedEventArgs args)
     {
@@ -28,18 +22,18 @@ public class AppNotificationActivationHandler : ActivationHandler<LaunchActivate
     {
         // TODO: Handle notification activations.
 
-        //// // Access the AppNotificationActivatedEventArgs.
-        //// var activatedEventArgs = (AppNotificationActivatedEventArgs)AppInstance.GetCurrent().GetActivatedEventArgs().Data;
+        // Access the AppNotificationActivatedEventArgs.
+        var activatedEventArgs = (AppNotificationActivatedEventArgs)AppInstance.GetCurrent().GetActivatedEventArgs().Data;
 
-        //// // Navigate to a specific page based on the notification arguments.
-        //// if (_notificationService.ParseArguments(activatedEventArgs.Argument)["action"] == "Settings")
-        //// {
-        ////     // Queue navigation with low priority to allow the UI to initialize.
-        ////     App.MainWindow.DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, () =>
-        ////     {
-        ////         _navigationService.NavigateTo(typeof(SettingsViewModel).FullName!);
-        ////     });
-        //// }
+        // Navigate to a specific page based on the notification arguments.
+        if (notificationService.ParseArguments(activatedEventArgs.Argument)["action"] == "Settings")
+        {
+            // Queue navigation with low priority to allow the UI to initialize.
+            App.MainWindow.DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, () =>
+            {
+                navigationService.NavigateTo(typeof(SettingsViewModel).FullName!);
+            });
+        }
 
         App.MainWindow.DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, () =>
         {

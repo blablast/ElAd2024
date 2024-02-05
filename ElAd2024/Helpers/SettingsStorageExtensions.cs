@@ -12,16 +12,16 @@ public static class SettingsStorageExtensions
     private const string FileExtension = ".json";
 
     public static bool IsRoamingStorageAvailable(this ApplicationData appData)
-    {
-        return appData.RoamingStorageQuota == 0;
-    }
+        => appData.RoamingStorageQuota == 0;
 
     public static async Task SaveAsync<T>(this StorageFolder folder, string name, T content)
     {
-        var file = await folder.CreateFileAsync(GetFileName(name), CreationCollisionOption.ReplaceExisting);
-        var fileContent = await Json.StringifyAsync(content);
-
-        await FileIO.WriteTextAsync(file, fileContent);
+        if (content is not null)
+        {
+            var file = await folder.CreateFileAsync(GetFileName(name), CreationCollisionOption.ReplaceExisting);
+            var fileContent = await Json.StringifyAsync(content);
+            await FileIO.WriteTextAsync(file, fileContent);
+        }
     }
 
     public static async Task<T?> ReadAsync<T>(this StorageFolder folder, string name)
@@ -31,40 +31,28 @@ public static class SettingsStorageExtensions
             return default;
         }
 
-        var file = await folder.GetFileAsync($"{name}.json");
+        var file = await folder.GetFileAsync($"{name}.{FileExtension}");
         var fileContent = await FileIO.ReadTextAsync(file);
-
         return await Json.ToObjectAsync<T>(fileContent);
     }
 
     public static async Task SaveAsync<T>(this ApplicationDataContainer settings, string key, T value)
     {
-        settings.SaveString(key, await Json.StringifyAsync(value));
+        if (value is not null)
+        {
+            settings.SaveString(key, await Json.StringifyAsync(value));
+        }
     }
 
     public static void SaveString(this ApplicationDataContainer settings, string key, string value)
-    {
-        settings.Values[key] = value;
-    }
+        => settings.Values[key] = value;
 
     public static async Task<T?> ReadAsync<T>(this ApplicationDataContainer settings, string key)
-    {
-        object? obj;
-
-        if (settings.Values.TryGetValue(key, out obj))
-        {
-            return await Json.ToObjectAsync<T>((string)obj);
-        }
-
-        return default;
-    }
+        => settings.Values.TryGetValue(key, out var obj) ? await Json.ToObjectAsync<T>((string)obj) : default;
 
     public static async Task<StorageFile> SaveFileAsync(this StorageFolder folder, byte[] content, string fileName, CreationCollisionOption options = CreationCollisionOption.ReplaceExisting)
     {
-        if (content == null)
-        {
-            throw new ArgumentNullException(nameof(content));
-        }
+        ArgumentNullException.ThrowIfNull(content);
 
         if (string.IsNullOrEmpty(fileName))
         {
@@ -80,13 +68,12 @@ public static class SettingsStorageExtensions
     {
         var item = await folder.TryGetItemAsync(fileName).AsTask().ConfigureAwait(false);
 
-        if ((item != null) && item.IsOfType(StorageItemTypes.File))
+        if ((item is not null) && item.IsOfType(StorageItemTypes.File))
         {
             var storageFile = await folder.GetFileAsync(fileName);
             var content = await storageFile.ReadBytesAsync();
             return content;
         }
-
         return null;
     }
 
@@ -106,7 +93,5 @@ public static class SettingsStorageExtensions
     }
 
     private static string GetFileName(string name)
-    {
-        return string.Concat(name, FileExtension);
-    }
+        => string.Concat(name, FileExtension);
 }

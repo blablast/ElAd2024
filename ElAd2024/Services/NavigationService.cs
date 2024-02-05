@@ -11,11 +11,11 @@ namespace ElAd2024.Services;
 
 // For more information on navigation between pages see
 // https://github.com/microsoft/TemplateStudio/blob/main/docs/WinUI/navigation.md
-public class NavigationService : INavigationService
+public class NavigationService(IPageService pageService) : INavigationService
 {
-    private readonly IPageService _pageService;
-    private object? _lastParameterUsed;
-    private Frame? _frame;
+    private readonly IPageService pageService = pageService;
+    private object? lastParameterUsed;
+    private Frame? frame;
 
     public event NavigatedEventHandler? Navigated;
 
@@ -23,44 +23,37 @@ public class NavigationService : INavigationService
     {
         get
         {
-            if (_frame == null)
+            if (frame is null)
             {
-                _frame = App.MainWindow.Content as Frame;
+                frame = App.MainWindow.Content as Frame;
                 RegisterFrameEvents();
             }
-
-            return _frame;
+            return frame;
         }
-
         set
         {
             UnregisterFrameEvents();
-            _frame = value;
+            frame = value;
             RegisterFrameEvents();
         }
     }
 
-    [MemberNotNullWhen(true, nameof(Frame), nameof(_frame))]
+    [MemberNotNullWhen(true, nameof(Frame), nameof(frame))]
     public bool CanGoBack => Frame != null && Frame.CanGoBack;
-
-    public NavigationService(IPageService pageService)
-    {
-        _pageService = pageService;
-    }
 
     private void RegisterFrameEvents()
     {
-        if (_frame != null)
+        if (frame is not null)
         {
-            _frame.Navigated += OnNavigated;
+            frame.Navigated += OnNavigated;
         }
     }
 
     private void UnregisterFrameEvents()
     {
-        if (_frame != null)
+        if (frame is not null)
         {
-            _frame.Navigated -= OnNavigated;
+            frame.Navigated -= OnNavigated;
         }
     }
 
@@ -68,40 +61,34 @@ public class NavigationService : INavigationService
     {
         if (CanGoBack)
         {
-            var vmBeforeNavigation = _frame.GetPageViewModel();
-            _frame.GoBack();
+            var vmBeforeNavigation = frame.GetPageViewModel();
+            frame.GoBack();
             if (vmBeforeNavigation is INavigationAware navigationAware)
             {
                 navigationAware.OnNavigatedFrom();
             }
-
             return true;
         }
-
         return false;
     }
 
     public bool NavigateTo(string pageKey, object? parameter = null, bool clearNavigation = false)
     {
-        var pageType = _pageService.GetPageType(pageKey);
-
-        if (_frame != null && (_frame.Content?.GetType() != pageType || (parameter != null && !parameter.Equals(_lastParameterUsed))))
+        var pageType = pageService.GetPageType(pageKey);
+        if (frame is not null && (frame.Content?.GetType() != pageType || (parameter is not null && !parameter.Equals(lastParameterUsed))))
         {
-            _frame.Tag = clearNavigation;
-            var vmBeforeNavigation = _frame.GetPageViewModel();
-            var navigated = _frame.Navigate(pageType, parameter);
-            if (navigated)
+            frame.Tag = clearNavigation;
+            var vmBeforeNavigation = frame.GetPageViewModel();
+            if (frame.Navigate(pageType, parameter))
             {
-                _lastParameterUsed = parameter;
+                lastParameterUsed = parameter;
                 if (vmBeforeNavigation is INavigationAware navigationAware)
                 {
                     navigationAware.OnNavigatedFrom();
                 }
+                return true;
             }
-
-            return navigated;
         }
-
         return false;
     }
 

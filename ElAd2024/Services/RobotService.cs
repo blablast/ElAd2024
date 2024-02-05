@@ -25,7 +25,7 @@ public class RobotService : IRobotService
     {
         get; set;
     }
-    public List<string> FanucVisions { get; set; } = new();
+    public List<string> FanucVisions { get; set; } = [];
     public string RobotVistionURL() => $"http://{IPAddress}/frh/vision/vrfrmn.stm";
     #endregion
 
@@ -185,13 +185,13 @@ internal class FanucData<T>
 {
     public static List<string> GetVisions(string IPAddress)
     {
-        List<string> registers = new();
+        List<string> registers = [];
         try
         {
             var responseBody = new HttpClient().GetStringAsync($"http://{IPAddress}/MD/INDEX_VD.HTM").GetAwaiter().GetResult();
             HtmlDocument htmlSnippet = new();
             htmlSnippet.LoadHtml(responseBody);
-            var words = htmlSnippet.DocumentNode?.SelectNodes($"//table")[2]?.InnerText.Split('\n') ?? Array.Empty<string>();
+            var words = htmlSnippet.DocumentNode?.SelectNodes($"//table")[2]?.InnerText.Split('\n') ?? [];
             for (var i = 0; i < words.Length; i++)
             {
                 if (words[i].Contains("Vision VD file"))
@@ -210,7 +210,7 @@ internal class FanucData<T>
     public static List<T> GetRegisters(string fanucFileName, string IPAddress)
     {
         HttpClient client = new();
-        List<T> registers = new();
+        List<T> registers = [];
         try
         {
             var responseBody = client.GetStringAsync($"http://{IPAddress}/MD/{fanucFileName}").GetAwaiter().GetResult();
@@ -282,7 +282,7 @@ internal class ResponseFANUC<T>
 {
     public string Name { get; set; } = string.Empty;
     public string Fastclock { get; set; } = string.Empty;
-    public List<T> RPC { get; set; } = new();
+    public List<T> RPC { get; set; } = [];
 }
 
 internal class ResponseRPC

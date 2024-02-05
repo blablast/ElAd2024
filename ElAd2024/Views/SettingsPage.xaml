@@ -5,19 +5,171 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:helpers="using:ElAd2024.Helpers"
+    xmlns:models="using:ElAd2024.Models"
     xmlns:xaml="using:Microsoft.UI.Xaml"
+    xmlns:converters="using:ElAd2024.Converters"
     mc:Ignorable="d">
     <Page.Resources>
         <helpers:EnumToBooleanConverter x:Key="EnumToBooleanConverter" />
+        <converters:StringToUintConverter x:Key="StringToUintConverter"/>
+        <converters:StringToUshortConverter x:Key="StringToUshortConverter"/>
+        <converters:StringToSerialHandshakeConverter x:Key="StringToSerialHandshakeConverter"/>
+        <converters:StringToSerialParityConverter x:Key="StringToSerialParityConverter"/>
+        <converters:StringToSerialStopBitCountConverter x:Key="StringToSerialStopBitCountConverter"/>
+        <converters:DoubleToTimeSpanFromMillisecondsConverter x:Key="DoubleToTimeSpanFromMillisecondsConverter"/>
+
+        <!-- ComboBox Style -->
+        <Style x:Key="SettingsComboBoxStyle" TargetType="ComboBox">
+            <Setter Property="Margin" Value="0,0,0,5"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        </Style>
+
+        <!-- CheckBox Style -->
+        <Style x:Key="SettingsCheckBoxStyle" TargetType="CheckBox">
+            <Setter Property="Margin" Value="0,5,0,0"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        </Style>
+
+        <!-- Common TextBlock Style -->
+        <Style x:Key="SettingsTextBlockStyle" TargetType="TextBlock">
+            <Setter Property="Margin" Value="0,5,0,0"/>
+        </Style>
+
+        <!-- NumberBox Style -->
+        <Style x:Key="SettingsNumberBoxStyle" TargetType="NumberBox">
+            <Setter Property="SpinButtonPlacementMode" Value="Inline"/>
+            <Setter Property="SmallChange" Value="10"/>
+            <Setter Property="LargeChange" Value="100"/>
+            <Setter Property="Minimum" Value="0"/>
+            <Setter Property="Maximum" Value="5000"/>
+        </Style>
+
+        <!-- DataTemplate for device settings -->
+        <DataTemplate x:Key="DeviceSettingsTemplate" x:DataType="models:SerialPortInfo">
+            <StackPanel Width="350">
+                <!-- Baud Rate -->
+                <TextBlock Text="Baud Rate:" Margin="0,5,0,0"/>
+                <ComboBox SelectedValue="{x:Bind BaudRate, Mode=TwoWay, Converter={StaticResource StringToUintConverter}}" Style="{StaticResource SettingsComboBoxStyle}">
+                    <x:String>9600</x:String>
+                    <x:String>19200</x:String>
+                    <x:String>38400</x:String>
+                    <x:String>57600</x:String>
+                    <x:String>115200</x:String>
+                    <x:String>230400</x:String>
+                    <x:String>460800</x:String>
+                    <x:String>921600</x:String>
+                </ComboBox>
+
+                <!-- States -->
+                <CheckBox Content="Break Signal State"  IsChecked="{x:Bind BreakSignalState, Mode=TwoWay}" Style="{StaticResource SettingsCheckBoxStyle}"/>
+
+                <!-- Data Bits -->
+                <TextBlock Text="Data Bits:" Margin="0,5,0,0"/>
+                <ComboBox SelectedValue="{x:Bind DataBits, Mode=TwoWay, Converter={StaticResource StringToUshortConverter}}" Style="{StaticResource SettingsComboBoxStyle}">
+                    <x:String>7</x:String>
+                    <x:String>8</x:String>
+                </ComboBox>
+
+                <!-- Handshake -->
+                <TextBlock Text="Handshake:" Margin="0,5,0,0"/>
+                <ComboBox SelectedValue="{x:Bind Handshake, Mode=TwoWay, Converter={StaticResource StringToSerialHandshakeConverter}}" Style="{StaticResource SettingsComboBoxStyle}">
+                    <x:String>None</x:String>
+                    <x:String>RequestToSend</x:String>
+                    <x:String>RequestToSendXOnXOff</x:String>
+                    <x:String>XOnXOff</x:String>
+                </ComboBox>
+
+                <CheckBox Content="Is Data Terminal Ready Enabled"  IsChecked="{x:Bind IsDataTerminalReadyEnabled, Mode=TwoWay}" Style="{StaticResource SettingsCheckBoxStyle}"/>
+                <CheckBox Content="Is Request To Send Enabled"  IsChecked="{x:Bind IsRequestToSendEnabled, Mode=TwoWay}" Style="{StaticResource SettingsCheckBoxStyle}"/>
+
+                <!-- Parity -->
+                <TextBlock Text="Parity:" Margin="0,5,0,0"/>
+                <ComboBox SelectedValue="{x:Bind Parity, Mode=TwoWay, Converter={StaticResource StringToSerialParityConverter}}" Style="{StaticResource SettingsComboBoxStyle}">
+                    <x:String>None</x:String>
+                    <x:String>Odd</x:String>
+                    <x:String>Even</x:String>
+                    <x:String>Mark</x:String>
+                    <x:String>Space</x:String>
+                </ComboBox>
+
+                <NumberBox
+                    VerticalAlignment="Top"
+                    Header="Read Timeout:"
+                    Value="{x:Bind ReadTimeout, Mode=TwoWay, Converter={StaticResource DoubleToTimeSpanFromMillisecondsConverter}}"   Style="{StaticResource SettingsNumberBoxStyle}"/>
+
+                <!-- Stop Bits -->
+                <TextBlock Text="Stop Bits:" Margin="0,5,0,0"/>
+                <ComboBox SelectedValue="{x:Bind StopBits, Mode=TwoWay, Converter={StaticResource StringToSerialStopBitCountConverter}}" Style="{StaticResource SettingsComboBoxStyle}">
+                    <x:String>One</x:String>
+                    <x:String>OnePointFive</x:String>
+                    <x:String>Two</x:String>
+                </ComboBox>
+
+                <NumberBox
+                    VerticalAlignment="Top"
+                    Header="Write Timeout:"
+                    Value="{x:Bind WriteTimeout, Mode=TwoWay, Converter={StaticResource DoubleToTimeSpanFromMillisecondsConverter}}"  Style="{StaticResource SettingsNumberBoxStyle}" />
+
+
+
+            </StackPanel>
+        </DataTemplate>
+
     </Page.Resources>
-    <Grid>
+    <ScrollView>
         <StackPanel
-            x:Name="ContentArea">
-            <TextBlock x:Uid="Settings_Personalization" Style="{ThemeResource SubtitleTextBlockStyle}" />
+            x:Name="ContentArea" MaxWidth="1150" HorizontalAlignment="Left">
+            <TextBlock x:Uid="Settings_About" Style="{ThemeResource SubtitleTextBlockStyle}"/>
+            <StackPanel Margin="{StaticResource XSmallTopMargin}">
+                <TextBlock Text="{x:Bind ViewModel.VersionDescription, Mode=OneWay}" Style="{ThemeResource BodyTextBlockStyle}" />
+
+                <TextBlock x:Uid="Settings_AboutDescription" Margin="{StaticResource XSmallTopMargin}" Style="{ThemeResource BodyTextBlockStyle}"/>
+                <HyperlinkButton x:Uid="SettingsPage_PrivacyTermsLink" Margin="{StaticResource SettingsPageHyperlinkButtonMargin}" />
+            </StackPanel>
+            <StackPanel>
+            <TextBox Margin="{StaticResource SmallTopBottomMargin}" Width="200" HorizontalAlignment="Left" Header="Robot IP Address"
+                       Text="{x:Bind ViewModel.IPAddress, Mode=TwoWay}" Style="{ThemeResource DefaultTextBoxStyle}" />
+            </StackPanel>
+            <StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <Expander Header="Environmental Sensors" IsExpanded="True" Width="385">
+                        <StackPanel>
+                            <TextBlock Text="Serial Port:" Margin="0,5,0,0"/>
+                            <ComboBox ItemsSource="{x:Bind ViewModel.AvailableSerialPorts, Mode=OneWay}"
+                              SelectedItem="{x:Bind ViewModel.SelectedEnvironmentalSensorsPort, Mode=TwoWay}"
+                                  HorizontalAlignment="Stretch"/>
+
+                            <ContentControl Content="{x:Bind ViewModel.EnvironmentalSensorsSettings, Mode=OneWay}" ContentTemplate="{StaticResource DeviceSettingsTemplate}"/>
+                        </StackPanel>
+                    </Expander>
+                    <Expander Header="Scale Device" IsExpanded="True" Width="385">
+                        <StackPanel>
+                            <TextBlock Text="Serial Port:" Margin="0,5,0,0"/>
+                            <ComboBox ItemsSource="{x:Bind ViewModel.AvailableSerialPorts, Mode=OneWay}"
+                              SelectedItem="{x:Bind ViewModel.SelectedScaleDevicePort, Mode=TwoWay}"
+                                  HorizontalAlignment="Stretch"/>
+
+                            <ContentControl Content="{x:Bind ViewModel.ScaleDeviceSettings, Mode=OneWay}" ContentTemplate="{StaticResource DeviceSettingsTemplate}"/>
+                        </StackPanel>
+                    </Expander>
+                    <Expander Header="Pad Device" IsExpanded="True" Width="385">
+                        <StackPanel>
+                            <TextBlock Text="Serial Port:" Margin="0,5,0,0"/>
+                            <ComboBox ItemsSource="{x:Bind ViewModel.AvailableSerialPorts, Mode=OneWay}"
+                              SelectedItem="{x:Bind ViewModel.SelectedPadDevicePort, Mode=TwoWay}"
+                                  HorizontalAlignment="Stretch"/>
+
+                            <ContentControl Content="{x:Bind ViewModel.PadDeviceSettings, Mode=OneWay}" ContentTemplate="{StaticResource DeviceSettingsTemplate}"/>
+                        </StackPanel>
+                    </Expander>
+                </StackPanel>
+                <Button Content="Save serial port settings" Margin="{StaticResource XSmallTopMargin}" Command="{x:Bind ViewModel.SaveSettingsCommand}" Style="{StaticResource AccentButtonStyle}" HorizontalAlignment="Right"/>
+
+            </StackPanel>
+
             <StackPanel Margin="{StaticResource SmallTopBottomMargin}">
                 <TextBlock x:Uid="Settings_Theme" />
-
-                <StackPanel Margin="{StaticResource XSmallTopMargin}">
+                <StackPanel Margin="{StaticResource XSmallTopMargin}" Orientation="Horizontal">
                     <RadioButton
                         x:Uid="Settings_Theme_Light"
                         Command="{x:Bind ViewModel.SwitchThemeCommand}"
@@ -51,17 +203,6 @@
                 </StackPanel>
             </StackPanel>
 
-            <TextBlock x:Uid="Settings_About" Style="{ThemeResource SubtitleTextBlockStyle}" />
-
-            <StackPanel Margin="{StaticResource XSmallTopMargin}">
-                <TextBlock Text="{x:Bind ViewModel.VersionDescription, Mode=OneWay}" Style="{ThemeResource BodyTextBlockStyle}" />
-
-                <TextBlock
-                    x:Uid="Settings_AboutDescription"
-                    Margin="{StaticResource XSmallTopMargin}"
-                    Style="{ThemeResource BodyTextBlockStyle}" />
-                <HyperlinkButton x:Uid="SettingsPage_PrivacyTermsLink" Margin="{StaticResource SettingsPageHyperlinkButtonMargin}" />
-            </StackPanel>
         </StackPanel>
-    </Grid>
+    </ScrollView>
 </Page>

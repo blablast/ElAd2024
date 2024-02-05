@@ -86,13 +86,13 @@
     <value>About this application</value>
   </data>
   <data name="Settings_AboutDescription.Text" xml:space="preserve">
-    <value>TODO: Replace with your app description.</value>
+    <value>This application stands at the forefront of innovation in material handling and automation by providing a unified platform for controlling an electro-adhesive gripper system. Designed with precision and versatility in mind, it allows users to monitor and adjust key environmental variables such as humidity and temperature, ensuring optimal conditions for electro-adhesion. Additionally, the app interfaces with a precision scale for accurate measurement tasks, enhancing its utility in applications requiring meticulous weight data. Integration with a Fanuc robot and advanced camera systems further expands its capabilities, enabling automated handling and sophisticated visual inspections. Whether for research, quality control, or production enhancement, this app delivers a comprehensive set of tools to harness the full potential of electro-adhesive gripping technology.</value>
   </data>
   <data name="SettingsPage_PrivacyTermsLink.Content" xml:space="preserve">
-    <value>Privacy Statement</value>
+    <value>BS</value>
   </data>
   <data name="SettingsPage_PrivacyTermsLink.NavigateUri" xml:space="preserve">
-    <value>https://YourPrivacyUrlGoesHere/</value>
+    <value>https://www.linkedin.com/in/b%C5%82a%C5%BCej-strus-7716192a/</value>
   </data>
   <data name="AppNotificationSamplePayload" xml:space="preserve">
     <value>&lt;toast launch="action=ToastClick"&gt;
@@ -107,5 +107,8 @@
     &lt;action content="Settings" arguments="action=Settings"/&gt;
   &lt;/actions&gt;
 &lt;/toast&gt;</value>
+  </data>
+  <data name="Shell_ManageBatches.Content" xml:space="preserve">
+    <value>ManageBatches</value>
   </data>
 </root>

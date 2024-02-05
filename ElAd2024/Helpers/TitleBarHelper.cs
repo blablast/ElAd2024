@@ -18,11 +18,13 @@ internal class TitleBarHelper
     private const int WAACTIVE = 0x01;
     private const int WMACTIVATE = 0x0006;
 
+#pragma warning disable SYSLIB1054 // Użyj elementu „LibraryImportAttribute” zamiast elementu „DllImportAttribute”, aby wygenerować kod skierowania funkcji P/Invoke w czasie kompilacji
     [DllImport("user32.dll")]
     private static extern IntPtr GetActiveWindow();
 
     [DllImport("user32.dll", CharSet = CharSet.Auto)]
     private static extern IntPtr SendMessage(IntPtr hWnd, int msg, int wParam, IntPtr lParam);
+#pragma warning restore SYSLIB1054 // Użyj elementu „LibraryImportAttribute” zamiast elementu „DllImportAttribute”, aby wygenerować kod skierowania funkcji P/Invoke w czasie kompilacji
 
     public static void UpdateTitleBar(ElementTheme theme)
     {
