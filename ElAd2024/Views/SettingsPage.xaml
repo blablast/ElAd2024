@@ -43,6 +43,17 @@
             <Setter Property="Minimum" Value="0"/>
             <Setter Property="Maximum" Value="5000"/>
         </Style>
+        
+        <Style x:Key="RobotRegisterNumberBoxStyle" TargetType="NumberBox">
+            <Setter Property="SpinButtonPlacementMode" Value="Inline"/>
+            <Setter Property="SmallChange" Value="1"/>
+            <Setter Property="LargeChange" Value="10"/>
+            <Setter Property="Minimum" Value="1"/>
+            <Setter Property="Maximum" Value="200"/>
+            <Setter Property="Width" Value="200"/>
+            <Setter Property="VerticalAlignment" Value="Top"/>
+            <Setter Property="Margin" Value="{StaticResource SmallLeftRightMargin}"/>
+        </Style>
 
         <!-- DataTemplate for device settings -->
         <DataTemplate x:Key="DeviceSettingsTemplate" x:DataType="models:SerialPortInfo">
@@ -126,9 +137,20 @@
                 <TextBlock x:Uid="Settings_AboutDescription" Margin="{StaticResource XSmallTopMargin}" Style="{ThemeResource BodyTextBlockStyle}"/>
                 <HyperlinkButton x:Uid="SettingsPage_PrivacyTermsLink" Margin="{StaticResource SettingsPageHyperlinkButtonMargin}" />
             </StackPanel>
-            <StackPanel>
-            <TextBox Margin="{StaticResource SmallTopBottomMargin}" Width="200" HorizontalAlignment="Left" Header="Robot IP Address"
-                       Text="{x:Bind ViewModel.IPAddress, Mode=TwoWay}" Style="{ThemeResource DefaultTextBoxStyle}" />
+            <StackPanel Orientation="Horizontal" Margin="{StaticResource SmallTopBottomMargin}">
+                <TextBox Margin="{StaticResource SmallLeftRightMargin}" Width="200" HorizontalAlignment="Left" Header="Robot IP Address: "
+                       Text="{x:Bind ViewModel.LocalSettingsService.RobotIPAddress, Mode=TwoWay}" Style="{ThemeResource DefaultTextBoxStyle}" />
+                <NumberBox Header="Robot Goto Position Register:"
+                           Value="{x:Bind ViewModel.LocalSettingsService.RobotGotoPositionRegister, Mode=TwoWay}"
+                           Style="{StaticResource RobotRegisterNumberBoxStyle}" />
+
+                <NumberBox Header="Robot In Position Register:"
+                           Value="{x:Bind ViewModel.LocalSettingsService.RobotInPositionRegister, Mode=TwoWay}"
+                           Style="{StaticResource RobotRegisterNumberBoxStyle}" />
+
+                <NumberBox Header="Robot Load Force Register: "
+                           Value="{x:Bind  ViewModel.LocalSettingsService.RobotLoadForceRegister, Mode=TwoWay}"
+                           Style="{StaticResource RobotRegisterNumberBoxStyle}" />
             </StackPanel>
             <StackPanel>
                 <StackPanel Orientation="Horizontal">
@@ -136,10 +158,10 @@
                         <StackPanel>
                             <TextBlock Text="Serial Port:" Margin="0,5,0,0"/>
                             <ComboBox ItemsSource="{x:Bind ViewModel.AvailableSerialPorts, Mode=OneWay}"
-                              SelectedItem="{x:Bind ViewModel.SelectedEnvironmentalSensorsPort, Mode=TwoWay}"
+                              SelectedItem="{x:Bind ViewModel.SelectedEnvDevicePort, Mode=TwoWay}"
                                   HorizontalAlignment="Stretch"/>
 
-                            <ContentControl Content="{x:Bind ViewModel.EnvironmentalSensorsSettings, Mode=OneWay}" ContentTemplate="{StaticResource DeviceSettingsTemplate}"/>
+                            <ContentControl Content="{x:Bind ViewModel.LocalSettingsService.EnvDeviceSettings, Mode=OneWay}" ContentTemplate="{StaticResource DeviceSettingsTemplate}"/>
                         </StackPanel>
                     </Expander>
                     <Expander Header="Scale Device" IsExpanded="True" Width="385">
@@ -149,7 +171,7 @@
                               SelectedItem="{x:Bind ViewModel.SelectedScaleDevicePort, Mode=TwoWay}"
                                   HorizontalAlignment="Stretch"/>
 
-                            <ContentControl Content="{x:Bind ViewModel.ScaleDeviceSettings, Mode=OneWay}" ContentTemplate="{StaticResource DeviceSettingsTemplate}"/>
+                            <ContentControl Content="{x:Bind ViewModel.LocalSettingsService.ScaleDeviceSettings, Mode=OneWay}" ContentTemplate="{StaticResource DeviceSettingsTemplate}"/>
                         </StackPanel>
                     </Expander>
                     <Expander Header="Pad Device" IsExpanded="True" Width="385">
@@ -159,7 +181,7 @@
                               SelectedItem="{x:Bind ViewModel.SelectedPadDevicePort, Mode=TwoWay}"
                                   HorizontalAlignment="Stretch"/>
 
-                            <ContentControl Content="{x:Bind ViewModel.PadDeviceSettings, Mode=OneWay}" ContentTemplate="{StaticResource DeviceSettingsTemplate}"/>
+                            <ContentControl Content="{x:Bind ViewModel.LocalSettingsService.PadDeviceSettings, Mode=OneWay}" ContentTemplate="{StaticResource DeviceSettingsTemplate}"/>
                         </StackPanel>
                     </Expander>
                 </StackPanel>

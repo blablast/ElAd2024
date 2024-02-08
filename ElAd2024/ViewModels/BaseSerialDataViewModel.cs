@@ -23,9 +23,10 @@ public partial class BaseSerialDataViewModel(SerialPortInfo serialPortInfo) : Ob
         }
         deviceService.DataReceived += OnDataReceived;
         IsConnected = true;
-        await OnConnected();
+        await StopDevice();
 
     }
+
     public async Task DisconnectAsync()
     {
         await OnDisconnecting();
@@ -44,7 +45,7 @@ public partial class BaseSerialDataViewModel(SerialPortInfo serialPortInfo) : Ob
     }
 
     protected virtual Task OnConnecting() => Task.CompletedTask; // Hook for derived classes.
-    protected virtual Task OnConnected() => Task.CompletedTask; // Hook for derived classes.
+    protected virtual Task StopDevice() => Task.CompletedTask; // Hook for derived classes.
     protected virtual Task OnDisconnecting() => Task.CompletedTask; // Hook for derived classes.
     protected virtual Task OnDisconnected() => Task.CompletedTask; // Hook for derived classes.
 
@@ -65,18 +66,9 @@ public partial class BaseSerialDataViewModel(SerialPortInfo serialPortInfo) : Ob
     }
 
     // Implement IDisposable to cleanup resources.
-    public void Dispose()
+    public async void Dispose()
     {
-        Dispose(true);
+        await DisconnectAsync();
         GC.SuppressFinalize(this);
-    }
-
-    protected virtual void Dispose(bool disposing)
-    {
-        if (disposing)
-        {
-            // Asynchronously disconnect to cleanup resources.
-            DisconnectAsync().ConfigureAwait(false).GetAwaiter().GetResult();
-        }
     }
 }

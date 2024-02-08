@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="ElAd2024.Views.UserControls.Slider"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:ElAd2024.Views.UserControls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:telerikInputs="using:Telerik.UI.Xaml.Controls.Input"
+    xmlns:telerikPrimitives="using:Telerik.UI.Xaml.Controls.Primitives"
+    >
+
+    <StackPanel Orientation="Vertical" HorizontalAlignment="Center" Background="#77222222" Margin="0 0 0 6" Padding="6">
+        <TextBlock HorizontalAlignment="Left">
+            <Run Text="{x:Bind Header, Mode=OneWay, FallbackValue=Auto}"/>
+            <Run Text="{x:Bind SelectionStart, Mode=OneWay, FallbackValue=Auto}" FontWeight="Bold" Foreground="Orange"/>
+            <Run Text=" ->"/>
+            <Run Text="{x:Bind SelectionEnd, Mode=OneWay, FallbackValue=Auto}" FontWeight="Bold" Foreground="Orange"/>
+        </TextBlock>
+        <telerikInputs:RadRangeSlider x:Name="rangeSlider" Margin="0 -6 0 6"
+                                      TickFrequency="{x:Bind TickFrequency, Mode=OneWay, FallbackValue=Auto}" LargeChange="100" SmallChange="100" SnapsTo="SmallChange" ShowRangeToolTip="False" ShowValueToolTip="False"
+                                      Width="{x:Bind SliderWidth, Mode=OneWay, FallbackValue=Auto}"
+                                      SelectionStart="{x:Bind SelectionStart, Mode=TwoWay, FallbackValue=Auto}"
+                                      SelectionEnd="{x:Bind SelectionEnd, Mode=TwoWay, FallbackValue=Auto}"
+                                      Minimum="{x:Bind Minimum, Mode=OneWay, FallbackValue=Auto}"
+                                      Maximum="{x:Bind Maximum, Mode=OneWay, FallbackValue=Auto}">
+            <telerikInputs:RadRangeSlider.TopLeftScaleStyle>
+                <Style TargetType="telerikPrimitives:ScalePrimitive">
+                    <Setter Property="Visibility" Value="Collapsed"/>
+                </Style>
+            </telerikInputs:RadRangeSlider.TopLeftScaleStyle>
+        </telerikInputs:RadRangeSlider>
+        <ToggleSwitch IsOn="{x:Bind MaxToMin, Mode=TwoWay, FallbackValue=False}" HorizontalAlignment="Center" OffContent="Min -> Max" OnContent="Max -> Min" Margin="0 -44 0 0"/>
+    </StackPanel>
+    
+</UserControl>

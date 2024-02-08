@@ -74,13 +74,12 @@ public partial class CameraService : ObservableRecipient
             Debug.WriteLine("Record limitation exceeded.");
         }
     }
-
-    public async Task<string> CapturePhoto(string name = "photo")
+    public async Task<(string fileName, string fullPathWithFileName)> CapturePhoto(string name = "photo")
     {
         var myPictures = await StorageLibrary.GetLibraryAsync(KnownLibraryId.Pictures);
         var file = await myPictures.SaveFolder.CreateFileAsync($"{name}.jpg", CreationCollisionOption.GenerateUniqueName);
         await mediaCapture?.CapturePhotoToStorageFileAsync(ImageEncodingProperties.CreateJpeg(), file);
-        return file.Name;
+        return (file.Name, file.Path);
     }
     public async Task PreviewCamera()
     {

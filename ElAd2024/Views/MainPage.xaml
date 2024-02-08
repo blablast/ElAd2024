@@ -9,8 +9,10 @@
     xmlns:telerikDataVisualization="using:Telerik.UI.Xaml.Controls.DataVisualization"
     xmlns:telerikChart="using:Telerik.UI.Xaml.Controls.Chart"
     xmlns:telerikPrimitives="using:Telerik.UI.Xaml.Controls.Primitives"
+    xmlns:telerikInputs="using:Telerik.UI.Xaml.Controls.Input"
     xmlns:telerikCharting="using:Telerik.Charting"
     xmlns:converters="using:ElAd2024.Converters"
+    xmlns:bs="using:ElAd2024.Views.UserControls"
     mc:Ignorable="d">
 
     <Page.Resources>
@@ -24,7 +26,7 @@
         <converters:PhaseToBrushConverter x:Key="PhaseToBrushConverter"/>
         <converters:HighVoltageoStringConverter x:Key="HighVoltageoStringConverter"/>
         <converters:BoolToGreenRedColorConverter x:Key="BoolToGreenRedColorConverter"/>
-        <converters:BoolToOpacityConverter x:Key="BoolToOpacityConverter"/>
+        <converters:BoolToNotVisibilityConverter x:Key="BoolToNotVisibilityConverter"/>
 
         <!-- Common TextBlock Style -->
         <Style x:Key="HeaderGridTextBlockStyle" TargetType="TextBlock">
@@ -61,80 +63,36 @@
             </StackPanel>
         </DataTemplate>
 
-        <DataTemplate x:Key="AvailableSerialPortsListViewTemplate" x:DataType="models:SerialPortInfo">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="*"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-
-                <!-- Ellipse -->
-                <Ellipse x:Name="Ellipse"
-                 Grid.RowSpan="2"
-                 Width="32"
-                 Height="32"
-                 Margin="6"
-                 VerticalAlignment="Center"
-                 HorizontalAlignment="Center"
-                 Fill="{ThemeResource SystemControlBackgroundBaseMediumBrush}"/>
-
-                <!-- TextBlock for the letter 'C' -->
-                <TextBlock Grid.RowSpan="2"
-                           Margin="0 5 0 0"
-                   Width="25"
-                   Height="25"
-                   VerticalAlignment="Center"
-                   HorizontalAlignment="Center"
-                   Text="{x:Bind PortNumber}"
-                   Foreground="DarkSlateGray"
-                   FontSize="14"
-                   FontWeight="Bold"
-                   TextAlignment="Center"/>
-
-                <!-- Other TextBlocks -->
-                <TextBlock Grid.Column="1"
-                   Text="{x:Bind Name}"
-                   x:Phase="1"
-                   Style="{ThemeResource BaseTextBlockStyle}"
-                   Margin="12,6,0,0"/>
-                <TextBlock Grid.Column="1"
-                   Grid.Row="1"
-                   Text="{x:Bind BaudRate}"
-                   x:Phase="2"
-                   Style="{ThemeResource BodyTextBlockStyle}"
-                   Margin="12,0,0,6"/>
-            </Grid>
-        </DataTemplate>
-
         <DataTemplate x:Key="StepsTemplate" x:DataType="models:TestStep">
             <Grid>
                 <telerikPrimitives:RadCustomHubTile
                     IsFrozen="{x:Bind IsFrozen}"
-                    UpdateInterval ="0:0:0.9"
+                    UpdateInterval ="{x:Bind UpdateInterval}"
                     Width="80"
                     Height="80"
                     Margin="-10 4"
                     >
                     <telerikPrimitives:RadCustomHubTile.FrontContent>
-                        <Border Background="{x:Bind Background}" Opacity="{x:Bind IsFrozen, Converter={StaticResource BoolToOpacityConverter}}">
-                        <Grid>
+                        <Border Background="{x:Bind Background}" Opacity="{x:Bind Opacity}">
+                            <Grid>
                                 <FontIcon Glyph="{x:Bind Icon, Mode=OneWay}" FontSize="16" Foreground="{x:Bind Foreground}" Margin="0 -50 0 0"/>
                                 <TextBlock Foreground="{x:Bind Foreground}" Text="{x:Bind Title}" FontSize="12" FontWeight="Bold" HorizontalAlignment="Center"
                                            VerticalAlignment="Center" Margin="0 25 0 0" TextAlignment="Center"
                                            />
-                        </Grid>
+                            </Grid>
                         </Border>
                     </telerikPrimitives:RadCustomHubTile.FrontContent>
 
                     <telerikPrimitives:RadCustomHubTile.BackContent>
-                        <Border Background="{x:Bind Background}">
-                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center" >
-                                <Image Source="{x:Bind ImageSource, Mode=OneWay}" />
-                            </StackPanel>
+                        <Border Background="{x:Bind Background}" Opacity="{x:Bind Opacity}">
+                            <Grid>
+                                <FontIcon Glyph="{x:Bind IconBack, Mode=OneWay}" FontSize="16" Foreground="{x:Bind Foreground}" Margin="0 -50 0 0"/>
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center" >
+                                    <Image Source="{x:Bind ImageSource, Mode=OneWay}" />
+                                    <TextBlock Foreground="{x:Bind Foreground}" Text="{x:Bind BackContent}" FontSize="12" FontWeight="Bold" HorizontalAlignment="Center"
+                                    VerticalAlignment="Center" Margin="0 0 0 0" TextAlignment="Center"/>
+                                </StackPanel>
+                            </Grid>
                         </Border>
                     </telerikPrimitives:RadCustomHubTile.BackContent>
                 </telerikPrimitives:RadCustomHubTile>
@@ -143,19 +101,328 @@
 
     </Page.Resources>
 
-    <Grid x:Name="ContentArea">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="200"/>
-            <ColumnDefinition MaxWidth="20"/>
-            <ColumnDefinition MinWidth="400" Width="*"/>
-        </Grid.ColumnDefinitions>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
-        <!-- To create this sample, add/change the following properties onto the code for the base example above: -->
-        <StackPanel Grid.Column="0" Height="1000" VerticalAlignment="Top">
-            <ListView
+
+    <telerikPrimitives:RadSideDrawer DrawerOpening="RadSideDrawer_DrawerOpening" DrawerClosing="RadSideDrawer_DrawerClosing" Loaded="RadSideDrawer_Loaded" Margin="-30 -6 0 0">
+        <telerikPrimitives:RadSideDrawer.MainContent>
+            <Grid Margin="48 0 0 0" x:Name="MainContent">
+                <StackPanel Grid.Column="2" HorizontalAlignment="Stretch">
+
+                    <Expander IsExpanded="True" HorizontalAlignment="Stretch" x:Name="ExpanderSettings" >
+                        <Expander.Header>
+                            <TextBlock Text="Settings" Style="{ThemeResource  PageTitleStyle}" Margin="{StaticResource MediumBottomMargin}" Foreground="Orange"/>
+                        </Expander.Header>
+                        <StackPanel>
+                            <Grid HorizontalAlignment="Stretch">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="180" />
+                                    <ColumnDefinition Width="180" />
+                                    <ColumnDefinition Width="180" />
+                                    <ColumnDefinition Width="180" />
+                                    <ColumnDefinition Width="180" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <ToggleSwitch Grid.Column="1" Header="Enviromental Device" IsOn="{x:Bind ViewModel.EnvDevice.IsConnected, Mode=OneWay}" HorizontalAlignment="Left" Margin="0 0 10 0"/>
+                                <ToggleSwitch Grid.Column="2" Header="Scale Device" IsOn="{x:Bind ViewModel.ScaleDevice.IsConnected, Mode=OneWay}" HorizontalAlignment="Left" Margin="0 0 10 0"/>
+                                <ToggleSwitch Grid.Column="3" Header="Pad Device" IsOn="{x:Bind ViewModel.PadDevice.IsConnected, Mode=OneWay}" HorizontalAlignment="Left" Margin="0 0 10 0"/>
+                                <ToggleSwitch Grid.Column="4" Header="Robot" IsOn="{x:Bind ViewModel.RobotDevice.IsConnected, Mode=OneWay}" HorizontalAlignment="Left" Margin="0 0 10 0"/>
+                                <ToggleSwitch Grid.Column="5" Header="Camera Device" IsOn="{x:Bind ViewModel.CameraDevice.IsConnected, Mode=OneWay}" HorizontalAlignment="Left" Margin="0 0 10 0"/>
+                            </Grid>
+                            <StackPanel Orientation="Horizontal"  HorizontalAlignment="Center">
+                                <Grid Margin="{StaticResource MediumLeftRightMargin}" >
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="200" />
+                                    </Grid.RowDefinitions>
+                                    <telerikDataVisualization:RadRadialGauge
+                        MaxValue="50" LabelStep="10" TickStep="5" MinAngle="0" MaxAngle="270" TickRadiusScale="0.4"
+                        LabelRadiusScale="0.5" VerticalAlignment="Center">
+                                        <telerikDataVisualization:RadRadialGauge.LabelTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding}" FontSize="12" Foreground="{ThemeResource TelerikGauge_RangeForegroundBrush}" Margin="0 0 10 10"/>
+                                            </DataTemplate>
+                                        </telerikDataVisualization:RadRadialGauge.LabelTemplate>
+
+                                        <telerikDataVisualization:RadialBarGaugeIndicator Value="100" Thickness="30" Brush="{ThemeResource TelerikGauge_MainIndicatorBackgroundBrush}"
+                                                                          telerikDataVisualization:RadRadialGauge.IndicatorRadiusScale="0.2"/>
+                                        <telerikDataVisualization:RadialBarGaugeIndicator Value="{x:Bind ViewModel.EnvDevice.Temperature, Mode=OneWay}" IsAnimated="True" Thickness="30"
+                                                                          Brush="{x:Bind ViewModel.EnvDevice.Temperature, Mode=OneWay, Converter={StaticResource TemperatureToBrushConverter}}"
+                                                                          telerikDataVisualization:RadRadialGauge.IndicatorRadiusScale="0.2"/>
+                                    </telerikDataVisualization:RadRadialGauge>
+                                    <StackPanel Margin="-120 110 0 0" HorizontalAlignment="Center">
+                                        <TextBlock Text="Temperature" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="{x:Bind ViewModel.EnvDevice.Temperature, Mode=OneWay, Converter={StaticResource FloatToTemperatureStringConverter}}" 
+                                   Foreground="{x:Bind ViewModel.EnvDevice.Temperature, Mode=OneWay, Converter={StaticResource TemperatureToBrushConverter}}"
+                            FontSize="20" HorizontalAlignment="Center"/>
+                                    </StackPanel>
+                                </Grid>
+
+                                <Grid Margin="{StaticResource MediumLeftRightMargin}" >
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="200" />
+                                    </Grid.RowDefinitions>
+                                    <telerikDataVisualization:RadRadialGauge
+                        Grid.Row="1" MaxValue="100" LabelStep="10" TickStep="5" MinAngle="0" MaxAngle="270" TickRadiusScale="0.4"
+                        LabelRadiusScale="0.5" VerticalAlignment="Top">
+                                        <telerikDataVisualization:RadRadialGauge.LabelTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding}" FontSize="12" Foreground="{ThemeResource TelerikGauge_RangeForegroundBrush}" Margin="0 0 10 10"/>
+                                            </DataTemplate>
+                                        </telerikDataVisualization:RadRadialGauge.LabelTemplate>
+
+                                        <telerikDataVisualization:RadialBarGaugeIndicator Value="100" Thickness="30" Brush="{ThemeResource TelerikGauge_MainIndicatorBackgroundBrush}"
+                                                                          telerikDataVisualization:RadRadialGauge.IndicatorRadiusScale="0.2"/>
+                                        <telerikDataVisualization:RadialBarGaugeIndicator Value="{x:Bind ViewModel.EnvDevice.Humidity, Mode=OneWay}" IsAnimated="True" Thickness="30"
+                                                                          Brush="{x:Bind ViewModel.EnvDevice.Humidity, Mode=OneWay, Converter={StaticResource HumidityToBrushConverter}}"
+                                                                          telerikDataVisualization:RadRadialGauge.IndicatorRadiusScale="0.2"/>
+                                    </telerikDataVisualization:RadRadialGauge>
+                                    <StackPanel Grid.Row="1" Margin="-120 110 0 0" HorizontalAlignment="Center">
+                                        <TextBlock Text="Humidity" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="{x:Bind ViewModel.EnvDevice.Humidity, Mode=OneWay, Converter={StaticResource FloatToHumidityStringConverter}}" 
+                                    Foreground="{x:Bind ViewModel.EnvDevice.Humidity, Mode=OneWay, Converter={StaticResource HumidityToBrushConverter}}"
+                            FontSize="20" HorizontalAlignment="Center"/>
+                                    </StackPanel>
+                                </Grid>
+
+
+                                <StackPanel Margin="{StaticResource MediumLeftRightMargin}">
+                                    <TextBlock Text="{x:Bind ViewModel.ScaleDevice.Weight, Mode=OneWay, Converter={StaticResource IntToGramsStringConverter}}"
+           Foreground="{x:Bind ViewModel.ScaleDevice.IsStable, Mode=OneWay, Converter={StaticResource BoolToGreenRedColorConverter}}" FontSize="72" CharacterSpacing="200" />
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button Content="Tare" Command="{x:Bind ViewModel.ScaleTareCommand}" Width="100" Margin="10"/>
+                                        <Button Content="Zero" Command="{x:Bind ViewModel.ScaleZeroCommand}" Width="100" Margin="10"/>
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <MediaPlayerElement Width="400" Source="{x:Bind ViewModel.CameraDevice.PlaybackSource, Mode=OneWay}" Stretch="Uniform" AutoPlay="True" VerticalAlignment="Bottom"/>
+
+                                <!-- Source="{x:Bind ViewModel.CameraDevice.PlaybackSource, Mode=OneWay}" -->
+
+                            </StackPanel>
+                        </StackPanel>
+                    </Expander>
+                    <!-- Settings -->
+
+                    <!-- Current Test -->
+                    <Expander IsExpanded="{x:Bind ViewModel.IsSelected, Mode=OneWay}" HorizontalAlignment="Stretch" IsEnabled="{x:Bind ViewModel.IsSelected, Mode=OneWay}">
+                        <Expander.Header>
+                            <TextBlock Text="{x:Bind ViewModel.SelectedFullName, Mode=OneWay}" Style="{ThemeResource  PageTitleStyle}" Margin="{StaticResource MediumBottomMargin}" Foreground="Orange"/>
+                        </Expander.Header>
+                        <StackPanel HorizontalAlignment="Stretch" Orientation="Horizontal">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Stretch">
+                                <StackPanel Width="255">
+                                    <bs:Slider SelectionStart="{x:Bind ViewModel.Parameters.DurationPhase1Lo, Mode=TwoWay}"
+                                           SelectionEnd="{x:Bind ViewModel.Parameters.DurationPhase1Hi, Mode=TwoWay}"
+                                           Minimum="{x:Bind ViewModel.Parameters.MinDuration, Mode=OneWay}"
+                                           Maximum="{x:Bind ViewModel.Parameters.MaxDuration, Mode=OneWay}"
+                                           SliderWidth="250" Header="Time Phase 1 [ms]:" MaxToMin="{x:Bind ViewModel.Parameters.DurationPhase1MaxToMin, Mode=OneWay}"
+                                           TickFrequency="500"/>
+
+                                    <bs:Slider SelectionStart="{x:Bind ViewModel.Parameters.HighVoltagePhase1Lo, Mode=TwoWay}"
+                                           SelectionEnd="{x:Bind ViewModel.Parameters.HighVoltagePhase1Hi, Mode=TwoWay}"
+                                           Minimum="500"
+                                           Maximum="{x:Bind ViewModel.Parameters.MaxHighVoltage, Mode=OneWay}"
+                                           SliderWidth="250" Header="HV Phase 1 [V]:" MaxToMin="{x:Bind ViewModel.Parameters.HighVoltagePhase1MaxToMin, Mode=OneWay}"
+                                           TickFrequency="500"/>
+
+                                    <bs:Slider SelectionStart="{x:Bind ViewModel.Parameters.DurationPhase2Lo, Mode=TwoWay}"
+                                           SelectionEnd="{x:Bind ViewModel.Parameters.DurationPhase2Hi, Mode=TwoWay}"
+                                           Minimum="{x:Bind ViewModel.Parameters.MinDuration, Mode=OneWay}"
+                                           Maximum="1000"
+                                           SliderWidth="250" Header="Time Phase 2 [ms]:" MaxToMin="{x:Bind ViewModel.Parameters.DurationPhase2MaxToMin, Mode=OneWay}"
+                                           TickFrequency="50"/>
+                                </StackPanel>
+                                <StackPanel Width="255" Margin="{StaticResource SmallLeftRightMargin}">
+                                    <bs:Slider SelectionStart="{x:Bind ViewModel.Parameters.DurationPhase3Lo, Mode=TwoWay}"
+                                           SelectionEnd="{x:Bind ViewModel.Parameters.DurationPhase3Hi, Mode=TwoWay}"
+                                           Minimum="{x:Bind ViewModel.Parameters.MinDuration, Mode=OneWay}"
+                                           Maximum="{x:Bind ViewModel.Parameters.MaxDuration, Mode=OneWay}"
+                                           SliderWidth="250" Header="Time Phase 3 [ms]:" MaxToMin="{x:Bind ViewModel.Parameters.DurationPhase3MaxToMin, Mode=OneWay}"
+                                               TickFrequency="500"/>
+
+                                    <bs:Slider SelectionStart="{x:Bind ViewModel.Parameters.HighVoltagePhase3Lo, Mode=TwoWay}"
+                                           SelectionEnd="{x:Bind ViewModel.Parameters.HighVoltagePhase3Hi, Mode=TwoWay}"
+                                           Minimum="500"
+                                           Maximum="{x:Bind ViewModel.Parameters.MaxHighVoltage, Mode=OneWay}"
+                                           SliderWidth="250" Header="HV Phase 3 [V]:" MaxToMin="{x:Bind ViewModel.Parameters.HighVoltagePhase3MaxToMin, Mode=OneWay}"
+                                               TickFrequency="500"/>
+
+
+                                    <NumberBox Header="Duration Observing [ms]" Value="{x:Bind ViewModel.Parameters.DurationObserving, Mode=TwoWay}" Minimum ="3000" Maximum="20000" Style="{StaticResource NumberBoxStyle}" />
+                                </StackPanel>
+                                <StackPanel Width="170">
+                                    <TextBlock Text="Initial polarity"/>
+                                    <ToggleSwitch OffContent="-" OnContent="+" FontSize="24" IsOn="{x:Bind ViewModel.Parameters.IsStartPlusPolarity, Mode=TwoWay}" />
+                                    <NumberBox Header="Change every" Value="{x:Bind ViewModel.Parameters.ChangePolarityStep, Mode=TwoWay}" SmallChange="1" Minimum="1" Maximum="100" Style="{StaticResource NumberBoxStyle}" 
+                                            Margin="0 12 0 0" />
+                                    <NumberBox Header="Load Force [N]" Value="{x:Bind ViewModel.Parameters.LoadForce, Mode=TwoWay}" SmallChange="1" Minimum="1" Maximum="30" Margin="0 12 0 0"  Style="{StaticResource NumberBoxStyle}" />
+                                    <CheckBox IsChecked="{x:Bind ViewModel.Parameters.AutoRegulationHV, Mode=TwoWay}" Margin="20 18 0 0">Auto regulation HV</CheckBox>
+
+                                </StackPanel>
+                                <StackPanel HorizontalAlignment="Stretch" Margin="{StaticResource SmallLeftRightMargin}">
+                                    <Button Width="200" Content="Pad Start" HorizontalAlignment="Stretch" Margin="0 10 0 0" Style="{StaticResource AccentButtonStyle}" Foreground="White" Background="DarkRed"
+                        Command="{x:Bind ViewModel.PadStartCommand}"/>
+                                    <Button Width="200" Content="Pad Stop" HorizontalAlignment="Stretch" Margin="0 10 0 0" Style="{StaticResource AccentButtonStyle}" Foreground="White" Background="DarkRed"
+                        Command="{x:Bind ViewModel.PadStopCommand}"/>
+                                    <NumberBox Header="Number of tests:" Value="{x:Bind ViewModel.Parameters.Total, Mode=TwoWay}" SmallChange="1" Minimum="1" Maximum="100" Style="{StaticResource NumberBoxStyle}" Margin="0 60 0 0"/>
+                                    <Button Width="200" Content="Start Tests" HorizontalAlignment="Stretch" Margin="0 16 0 0" Style="{StaticResource AccentButtonStyle}"
+                        Command="{x:Bind ViewModel.StartTestsCommand}"/>
+                                </StackPanel>
+
+                            </StackPanel>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="20 0 0 0">
+                                <ListView ItemsSource="{x:Bind ViewModel.ProceedTest.Steps, Mode=OneWay}" ItemTemplate="{StaticResource StepsTemplate}"
+                          HorizontalAlignment="Stretch" VerticalAlignment="Top" HorizontalContentAlignment="Stretch"
+                          ScrollViewer.HorizontalScrollMode="Enabled" ScrollViewer.HorizontalScrollBarVisibility="Hidden"
+                          >
+                                    <ListView.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <ItemsWrapGrid Orientation="Horizontal" MaximumRowsOrColumns="7"/>
+                                        </ItemsPanelTemplate>
+                                    </ListView.ItemsPanel>
+                                </ListView>
+                            </StackPanel>
+
+                        </StackPanel>
+
+                    </Expander>
+
+                    <!-- Plot Area -->
+                    <Expander IsExpanded="True" HorizontalAlignment="Stretch" x:Name="ExpanderPlot">
+                        <Expander.Header>
+                            <TextBlock Text="Plot Area" Style="{ThemeResource  PageTitleStyle}" Margin="{StaticResource MediumBottomMargin}" Foreground="Orange"/>
+                        </Expander.Header>
+                        <StackPanel>
+                            <StackPanel HorizontalAlignment="Stretch">
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Stretch">
+                                    <Grid ColumnSpacing="30">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="*" />
+                                        </Grid.RowDefinitions>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        
+                                        <TextBlock Grid.Column="0" Grid.Row="0" Text="Phase" Style="{ThemeResource HeaderGridTextBlockStyle}" />
+                                        <TextBlock Grid.Column="0" Grid.Row="1"
+                                                   Text="{x:Bind ViewModel.PadDevice.PhaseNumber, Mode=OneWay}"
+                                                   Foreground="{x:Bind ViewModel.PadDevice.PhaseNumber, Mode=OneWay, Converter={StaticResource PhaseToBrushConverter}}"
+                                                   Style="{ThemeResource CellGridTextBlockStyle}"/>
+                                        
+                                        <TextBlock Grid.Column="1" Grid.Row="0" Text="HV" Style="{ThemeResource HeaderGridTextBlockStyle}" />
+                                        <TextBlock Grid.Column="1" Grid.Row="1"
+                                                   Text="{x:Bind ViewModel.PadDevice.HighVoltage, Mode=OneWay, Converter={StaticResource HighVoltageoStringConverter}}"
+                                                   Foreground="{x:Bind ViewModel.PadDevice.PhaseNumber, Mode=OneWay, Converter={StaticResource PhaseToBrushConverter}}"
+                                                   Style="{ThemeResource CellGridTextBlockStyle}"/>
+                                        
+                                        <TextBlock Grid.Column="2" Grid.Row="0" Text="Elapsed time" Style="{ThemeResource HeaderGridTextBlockStyle}" />
+                                        <TextBlock Grid.Column="2" Grid.Row="1"
+                                                   Text="{x:Bind ViewModel.PadDevice.ElapsedTime, Mode=OneWay, Converter={StaticResource ElapsedTimeToStringConverter}}"
+                                                   Style="{ThemeResource CellGridTextBlockStyle}"/>
+                                        
+                                        <TextBlock Grid.Column="3" Grid.Row="0" Text="Temperature" Style="{ThemeResource HeaderGridTextBlockStyle}" />
+                                        <TextBlock Grid.Column="3" Grid.Row="1" Text="{x:Bind ViewModel.EnvDevice.Temperature, Mode=OneWay, Converter={StaticResource FloatToTemperatureStringConverter}}" 
+                                                    Foreground="{x:Bind ViewModel.EnvDevice.Temperature, Mode=OneWay, Converter={StaticResource TemperatureToBrushConverter}}"
+                                                    Style="{ThemeResource CellGridTextBlockStyle}"/>
+                                        
+                                        <TextBlock Grid.Column="4" Grid.Row="0" Text="Humidity" Style="{ThemeResource HeaderGridTextBlockStyle}" />
+                                        <TextBlock Grid.Column="4" Grid.Row="1" Text="{x:Bind ViewModel.EnvDevice.Humidity, Mode=OneWay, Converter={StaticResource FloatToHumidityStringConverter}}" 
+                                                    Foreground="{x:Bind ViewModel.EnvDevice.Humidity, Mode=OneWay, Converter={StaticResource HumidityToBrushConverter}}"
+                                                    Style="{ThemeResource CellGridTextBlockStyle}"/>
+
+                                        <TextBlock Grid.Column="5" Grid.Row="0" Text="Weight" Style="{ThemeResource HeaderGridTextBlockStyle}" />
+                                        <TextBlock Grid.Column="5" Grid.Row="1" Text="{x:Bind ViewModel.ScaleDevice.Weight, Mode=OneWay, Converter={StaticResource IntToGramsStringConverter}}"
+                                                   Foreground="{x:Bind ViewModel.ScaleDevice.IsStable, Mode=OneWay, Converter={StaticResource BoolToGreenRedColorConverter}}"
+                                                   Style="{ThemeResource CellGridTextBlockStyle}"/>
+
+                                        <TextBlock Grid.Column="6" Grid.Row="0" Text="Test #" Style="{ThemeResource HeaderGridTextBlockStyle}" />
+                                        <TextBlock Grid.Column="6" Grid.Row="1"  HorizontalAlignment="Left" Style="{ThemeResource CellGridTextBlockStyle}" >
+                                            <Run Text="{x:Bind ViewModel.Parameters.Counter, Mode=OneWay}"/>
+                                            <Run Text="/"/>
+                                            <Run Text="{x:Bind ViewModel.Parameters.Total, Mode=OneWay}"/>
+                                        </TextBlock>
+
+                                    </Grid>
+                                </StackPanel>
+                            </StackPanel>
+                            <telerikChart:RadCartesianChart PaletteName="DefaultDark" Height="300" x:Name="myChart">
+                                <telerikChart:RadCartesianChart.HorizontalAxis>
+                                    <telerikChart:CategoricalAxis VerticalLocation="Bottom" Foreground="Transparent" Visibility="Visible" TickThickness="1"/>
+                                    <!--   DateTimeCategoricalAxis VerticalLocation="Bottom" Foreground="#FFF" LabelFormat="{}{0:ss.fff}"/> -->
+                                </telerikChart:RadCartesianChart.HorizontalAxis>
+                                <telerikChart:RadCartesianChart.VerticalAxis>
+                                    <telerikChart:LinearAxis 
+                        HorizontalLocation="Left" 
+                        Foreground="#FFF"
+                        Minimum="{x:Bind ViewModel.PadDevice.AxisMinVoltage, Mode=OneWay}"
+                        Maximum="{x:Bind ViewModel.PadDevice.AxisMaxVoltage, Mode=OneWay}"/>
+                                </telerikChart:RadCartesianChart.VerticalAxis>
+                                <telerikChart:RadCartesianChart.Grid>
+                                    <telerikChart:CartesianChartGrid MajorStripLinesVisibility="XY" MajorGridLinesVisibility="XY">
+                                        <telerikChart:CartesianChartGrid.MajorXLineStyle>
+                                            <Style TargetType="Line">
+                                                <Setter Property="Stroke"  Value="#11CACACA"/>
+                                                <Setter Property="StrokeDashArray" Value="10, 2"/>
+                                            </Style>
+                                        </telerikChart:CartesianChartGrid.MajorXLineStyle>
+                                        <telerikChart:CartesianChartGrid.YStripeBrushes>
+                                            <SolidColorBrush Color="#11CACACA"/>
+                                            <SolidColorBrush Color="Transparent"/>
+                                        </telerikChart:CartesianChartGrid.YStripeBrushes>
+                                    </telerikChart:CartesianChartGrid>
+                                </telerikChart:RadCartesianChart.Grid>
+
+                                <telerikChart:SplineSeries x:Name="myChartSerie4" Stroke="Orange">
+                                    <telerikChart:SplineSeries.CategoryBinding>
+                                        <telerikChart:PropertyNameDataPointBinding PropertyName="ElapsedTime"/>
+                                    </telerikChart:SplineSeries.CategoryBinding>
+                                    <telerikChart:SplineSeries.ValueBinding>
+                                        <telerikChart:PropertyNameDataPointBinding PropertyName="HighVoltagePhase4"/>
+                                    </telerikChart:SplineSeries.ValueBinding>
+                                </telerikChart:SplineSeries>
+
+                                <telerikChart:SplineSeries x:Name="myChartSerie3" Stroke="Red">
+                                    <telerikChart:SplineSeries.CategoryBinding>
+                                        <telerikChart:PropertyNameDataPointBinding PropertyName="ElapsedTime"/>
+                                    </telerikChart:SplineSeries.CategoryBinding>
+                                    <telerikChart:SplineSeries.ValueBinding>
+                                        <telerikChart:PropertyNameDataPointBinding PropertyName="HighVoltagePhase3"/>
+                                    </telerikChart:SplineSeries.ValueBinding>
+                                </telerikChart:SplineSeries>
+
+                                <telerikChart:SplineSeries x:Name="myChartSerie2" Stroke="Blue">
+                                    <telerikChart:SplineSeries.CategoryBinding>
+                                        <telerikChart:PropertyNameDataPointBinding PropertyName="ElapsedTime"/>
+                                    </telerikChart:SplineSeries.CategoryBinding>
+                                    <telerikChart:SplineSeries.ValueBinding>
+                                        <telerikChart:PropertyNameDataPointBinding PropertyName="HighVoltagePhase2"/>
+                                    </telerikChart:SplineSeries.ValueBinding>
+                                </telerikChart:SplineSeries>
+
+                                <telerikChart:SplineSeries x:Name="myChartSerie1" Stroke="Red">
+                                    <telerikChart:SplineSeries.CategoryBinding>
+                                        <telerikChart:PropertyNameDataPointBinding PropertyName="ElapsedTime"/>
+                                    </telerikChart:SplineSeries.CategoryBinding>
+                                    <telerikChart:SplineSeries.ValueBinding>
+                                        <telerikChart:PropertyNameDataPointBinding PropertyName="HighVoltagePhase1"/>
+                                    </telerikChart:SplineSeries.ValueBinding>
+                                </telerikChart:SplineSeries>
+                            </telerikChart:RadCartesianChart>
+                        </StackPanel>
+                    </Expander>
+                </StackPanel>
+            </Grid>
+        </telerikPrimitives:RadSideDrawer.MainContent>
+        <telerikPrimitives:RadSideDrawer.DrawerContent>
+            <StackPanel VerticalAlignment="Top" Width="200" Margin="48 0 0 0">
+                <ListView
                   Header="Tests List"
                   ItemsSource="{x:Bind ViewModel.Batches, Mode=OneWay}"
                   ItemTemplate="{StaticResource TestsListTemplate}"
@@ -163,290 +430,8 @@
                   HorizontalAlignment="Stretch"
                   VerticalAlignment="Top"
                   />
-        </StackPanel>
-        <StackPanel Grid.Column="2" HorizontalAlignment="Stretch">
-
-            <Expander IsExpanded="True" HorizontalAlignment="Stretch">
-                <Expander.Header>
-                    <TextBlock Text="Settings" Style="{ThemeResource  PageTitleStyle}" Margin="{StaticResource MediumBottomMargin}" Foreground="Orange"/>
-                </Expander.Header>
-                <StackPanel>
-                    <Grid HorizontalAlignment="Stretch">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="180" />
-                            <ColumnDefinition Width="180" />
-                            <ColumnDefinition Width="180" />
-                            <ColumnDefinition Width="180" />
-                            <ColumnDefinition Width="180" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <ToggleSwitch Grid.Column="1" Header="Enviromental Device" IsOn="{x:Bind ViewModel.EnvDevice.IsConnected, Mode=OneWay}" HorizontalAlignment="Left" Margin="0 0 10 0"/>
-                        <ToggleSwitch Grid.Column="2" Header="Scale Device" IsOn="{x:Bind ViewModel.ScaleDevice.IsConnected, Mode=OneWay}" HorizontalAlignment="Left" Margin="0 0 10 0"/>
-                        <ToggleSwitch Grid.Column="3" Header="Pad Device" IsOn="{x:Bind ViewModel.PadDevice.IsConnected, Mode=OneWay}" HorizontalAlignment="Left" Margin="0 0 10 0"/>
-                        <ToggleSwitch Grid.Column="4" Header="Robot" IsOn="{x:Bind ViewModel.RobotDevice.IsConnected, Mode=OneWay}" HorizontalAlignment="Left" Margin="0 0 10 0"/>
-                        <ToggleSwitch Grid.Column="5" Header="Camera Device" IsOn="{x:Bind ViewModel.CameraDevice.IsConnected, Mode=OneWay}" HorizontalAlignment="Left" Margin="0 0 10 0"/>
-                    </Grid>
-                    <StackPanel Orientation="Horizontal"  HorizontalAlignment="Center">
-                        <Grid Margin="{StaticResource MediumLeftRightMargin}" >
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="200" />
-                            </Grid.RowDefinitions>
-                            <telerikDataVisualization:RadRadialGauge
-                                MaxValue="50" LabelStep="10" TickStep="5" MinAngle="0" MaxAngle="270" TickRadiusScale="0.4"
-                                LabelRadiusScale="0.5" VerticalAlignment="Center">
-                                <telerikDataVisualization:RadRadialGauge.LabelTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding}" FontSize="12" Foreground="{ThemeResource TelerikGauge_RangeForegroundBrush}" Margin="0 0 10 10"/>
-                                    </DataTemplate>
-                                </telerikDataVisualization:RadRadialGauge.LabelTemplate>
-
-                                <telerikDataVisualization:RadialBarGaugeIndicator Value="100" Thickness="30" Brush="{ThemeResource TelerikGauge_MainIndicatorBackgroundBrush}"
-                                                                                  telerikDataVisualization:RadRadialGauge.IndicatorRadiusScale="0.2"/>
-                                <telerikDataVisualization:RadialBarGaugeIndicator Value="{x:Bind ViewModel.EnvDevice.Temperature, Mode=OneWay}" IsAnimated="True" Thickness="30"
-                                                                                  Brush="{x:Bind ViewModel.EnvDevice.Temperature, Mode=OneWay, Converter={StaticResource TemperatureToBrushConverter}}"
-                                                                                  telerikDataVisualization:RadRadialGauge.IndicatorRadiusScale="0.2"/>
-                            </telerikDataVisualization:RadRadialGauge>
-                            <StackPanel Margin="-120 110 0 0" HorizontalAlignment="Center">
-                                <TextBlock Text="Temperature" HorizontalAlignment="Center"/>
-                                <TextBlock Text="{x:Bind ViewModel.EnvDevice.Temperature, Mode=OneWay, Converter={StaticResource FloatToTemperatureStringConverter}}" 
-                                           Foreground="{x:Bind ViewModel.EnvDevice.Temperature, Mode=OneWay, Converter={StaticResource TemperatureToBrushConverter}}"
-                                    FontSize="20" HorizontalAlignment="Center"/>
-                            </StackPanel>
-                        </Grid>
-
-                        <Grid Margin="{StaticResource MediumLeftRightMargin}" >
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="200" />
-                            </Grid.RowDefinitions>
-                            <telerikDataVisualization:RadRadialGauge
-                                Grid.Row="1" MaxValue="100" LabelStep="10" TickStep="5" MinAngle="0" MaxAngle="270" TickRadiusScale="0.4"
-                                LabelRadiusScale="0.5" VerticalAlignment="Top">
-                                <telerikDataVisualization:RadRadialGauge.LabelTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding}" FontSize="12" Foreground="{ThemeResource TelerikGauge_RangeForegroundBrush}" Margin="0 0 10 10"/>
-                                    </DataTemplate>
-                                </telerikDataVisualization:RadRadialGauge.LabelTemplate>
-
-                                <telerikDataVisualization:RadialBarGaugeIndicator Value="100" Thickness="30" Brush="{ThemeResource TelerikGauge_MainIndicatorBackgroundBrush}"
-                                                                                  telerikDataVisualization:RadRadialGauge.IndicatorRadiusScale="0.2"/>
-                                <telerikDataVisualization:RadialBarGaugeIndicator Value="{x:Bind ViewModel.EnvDevice.Humidity, Mode=OneWay}" IsAnimated="True" Thickness="30"
-                                                                                  Brush="{x:Bind ViewModel.EnvDevice.Humidity, Mode=OneWay, Converter={StaticResource HumidityToBrushConverter}}"
-                                                                                  telerikDataVisualization:RadRadialGauge.IndicatorRadiusScale="0.2"/>
-                            </telerikDataVisualization:RadRadialGauge>
-                            <StackPanel Grid.Row="1" Margin="-120 110 0 0" HorizontalAlignment="Center">
-                                <TextBlock Text="Humidity" HorizontalAlignment="Center"/>
-                                <TextBlock Text="{x:Bind ViewModel.EnvDevice.Humidity, Mode=OneWay, Converter={StaticResource FloatToHumidityStringConverter}}" 
-                                            Foreground="{x:Bind ViewModel.EnvDevice.Humidity, Mode=OneWay, Converter={StaticResource HumidityToBrushConverter}}"
-                                    FontSize="20" HorizontalAlignment="Center"/>
-                            </StackPanel>
-                        </Grid>
-
-
-                        <StackPanel Margin="{StaticResource MediumLeftRightMargin}">
-                            <TextBlock Text="{x:Bind ViewModel.ScaleDevice.Weight, Mode=OneWay, Converter={StaticResource IntToGramsStringConverter}}"
-                   Foreground="{x:Bind ViewModel.ScaleDevice.IsStable, Mode=OneWay, Converter={StaticResource BoolToGreenRedColorConverter}}" FontSize="72" CharacterSpacing="200" />
-                            <StackPanel Orientation="Horizontal">
-                                <Button Content="Tare" Command="{x:Bind ViewModel.ScaleTareCommand}" Width="100" Margin="10"/>
-                                <Button Content="Zero" Command="{x:Bind ViewModel.ScaleZeroCommand}" Width="100" Margin="10"/>
-                            </StackPanel>
-                        </StackPanel>
-
-                        <MediaPlayerElement Width="400"
-            Source="{x:Bind ViewModel.CameraDevice.PlaybackSource, Mode=OneWay}"
-            Stretch="Uniform"
-            AutoPlay="True"
-            VerticalAlignment="Bottom"/>
-
-                    </StackPanel>
-                </StackPanel>
-            </Expander>
-            <!-- Settings -->
-
-            <!-- Current Test -->
-            <Expander IsExpanded="{x:Bind ViewModel.IsSelected, Mode=OneWay}" HorizontalAlignment="Stretch" IsEnabled="{x:Bind ViewModel.IsSelected, Mode=OneWay}">
-                <Expander.Header>
-                    <TextBlock Text="{x:Bind ViewModel.SelectedFullName, Mode=OneWay}" Style="{ThemeResource  PageTitleStyle}" Margin="{StaticResource MediumBottomMargin}" Foreground="Orange"/>
-                </Expander.Header>
-                <StackPanel HorizontalAlignment="Stretch">
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Stretch">
-                        <StackPanel Width="170">
-                            <NumberBox Header="Duration Phase 1 [ms]" Value="{x:Bind ViewModel.Parameters.DurationPhase1, Mode=TwoWay}" Maximum="{x:Bind ViewModel.Parameters.MaxDuration}" Style="{StaticResource NumberBoxStyle}" />
-                            <NumberBox Header="High Voltage Phase 1 [V]" Value="{x:Bind ViewModel.Parameters.HighVoltagePhase1, Mode=TwoWay}" Maximum="{x:Bind ViewModel.Parameters.MaxHighVoltage}" Style="{StaticResource NumberBoxStyle}" />
-                            <NumberBox Header="Duration Phase 2 [ms]" Value="{x:Bind ViewModel.Parameters.DurationPhase2, Mode=TwoWay}" Minimum ="300" Maximum="{x:Bind ViewModel.Parameters.MaxDuration}" Style="{StaticResource NumberBoxStyle}" />
-                        </StackPanel>
-                        <StackPanel Width="170" Margin="{StaticResource MediumLeftRightMargin}">
-                            <NumberBox Header="Duration Phase 3 [ms]" Value="{x:Bind ViewModel.Parameters.DurationPhase3, Mode=TwoWay}" Maximum="{x:Bind ViewModel.Parameters.MaxDuration}" Style="{StaticResource NumberBoxStyle}" />
-                            <NumberBox Header="High Voltage Phase 3 [V]" Value="{x:Bind ViewModel.Parameters.HighVoltagePhase3, Mode=TwoWay}" Maximum="{x:Bind ViewModel.Parameters.MaxHighVoltage}" Style="{StaticResource NumberBoxStyle}" />
-                            <NumberBox Header="Duration Phase 4 [ms]" Value="{x:Bind ViewModel.Parameters.DurationPhase4, Mode=TwoWay}" Minimum ="3000" Maximum="30000" Style="{StaticResource NumberBoxStyle}" />
-                        </StackPanel>
-                        <StackPanel Width="170">
-                            <StackPanel Margin="0 12 0 0">
-                                <TextBlock Text="Initail polarization"/>
-                                <ToggleSwitch OffContent="-" OnContent="+" FontSize="24" IsOn="{x:Bind ViewModel.Parameters.IsStartPolarizationPlus, Mode=TwoWay}"/>
-                            </StackPanel>
-                            <StackPanel Margin="0 24 0 0">
-                                <TextBlock Text="Work mode"/>
-                                <ToggleSwitch OffContent="Keep" OnContent="Switch" IsOn="{x:Bind ViewModel.Parameters.IsSwitchWorkMode, Mode=TwoWay}"/>
-                            </StackPanel>
-                            <StackPanel  Margin="0 12 0 0">
-                                <NumberBox Header="Change every" Value="{x:Bind ViewModel.Parameters.ChangePolarizationStep, Mode=TwoWay}" SmallChange="1" Minimum="1" Maximum="100" Style="{StaticResource NumberBoxStyle}" 
-                                           Visibility="{x:Bind ViewModel.Parameters.IsSwitchWorkMode, Mode=OneWay}"
-                                           />
-                            </StackPanel>
-                        </StackPanel>
-                        <StackPanel Width="170">
-                            <NumberBox Header="Load Force [N]" Value="{x:Bind ViewModel.Parameters.LoadForce, Mode=TwoWay}" SmallChange="1" Minimum="1" Maximum="30" Style="{StaticResource NumberBoxStyle}" />
-                            <NumberBox Header="Tests Number" Value="{x:Bind ViewModel.Parameters.Count, Mode=TwoWay}" SmallChange="1" Minimum="1" Maximum="100" Style="{StaticResource NumberBoxStyle}" />
-                            <CheckBox IsChecked="{x:Bind ViewModel.Parameters.AutoRegulationHV, Mode=TwoWay}" Margin="20 40 0 0">Auto regulation HV</CheckBox>
-                        </StackPanel>
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                        <ListView ItemsSource="{x:Bind ViewModel.Steps, Mode=OneWay}" ItemTemplate="{StaticResource StepsTemplate}"
-                                  HorizontalAlignment="Stretch" VerticalAlignment="Top" HorizontalContentAlignment="Stretch"
-                                  ScrollViewer.HorizontalScrollMode="Enabled" ScrollViewer.HorizontalScrollBarVisibility="Hidden"
-                                  >
-                            <ListView.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <ItemsWrapGrid Orientation="Horizontal" MaximumRowsOrColumns="7"/>
-                                </ItemsPanelTemplate>
-                            </ListView.ItemsPanel>
-                        </ListView>
-                    </StackPanel>
-                </StackPanel>
-
-            </Expander>
-
-            <!-- Plot Area -->
-            <Expander IsExpanded="True" HorizontalAlignment="Stretch">
-                <Expander.Header>
-                    <TextBlock Text="Plot Area" Style="{ThemeResource  PageTitleStyle}" Margin="{StaticResource MediumBottomMargin}" Foreground="Orange"/>
-                </Expander.Header>
-                <StackPanel>
-                    <StackPanel HorizontalAlignment="Stretch">
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Stretch">
-                            <Grid Width="600" ColumnSpacing="30">
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="*" />
-                                </Grid.RowDefinitions>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" MaxWidth="50"/>
-                                    <ColumnDefinition Width="*" MaxWidth="150"/>
-                                    <ColumnDefinition Width="*" MaxWidth="150"/>
-                                    <ColumnDefinition Width="*" MaxWidth="150"/>
-                                    <ColumnDefinition Width="*" MaxWidth="150"/>
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Grid.Row="0" Text="Phase" Style="{ThemeResource HeaderGridTextBlockStyle}" />
-                                <TextBlock Grid.Column="0" Grid.Row="1"
-                                           Text="{x:Bind ViewModel.PadDevice.PhaseNumber, Mode=OneWay}"
-                                           Foreground="{x:Bind ViewModel.PadDevice.PhaseNumber, Mode=OneWay, Converter={StaticResource PhaseToBrushConverter}}"
-                                           Style="{ThemeResource CellGridTextBlockStyle}"/>
-                                <TextBlock Grid.Column="1" Grid.Row="0" Text="HV" Style="{ThemeResource HeaderGridTextBlockStyle}" />
-                                <TextBlock Grid.Column="1" Grid.Row="1"
-                                           Text="{x:Bind ViewModel.PadDevice.HighVoltage, Mode=OneWay, Converter={StaticResource HighVoltageoStringConverter}}"
-                                           Foreground="{x:Bind ViewModel.PadDevice.PhaseNumber, Mode=OneWay, Converter={StaticResource PhaseToBrushConverter}}"
-                                           Style="{ThemeResource CellGridTextBlockStyle}"/>
-                                <TextBlock Grid.Column="2" Grid.Row="0" Text="Elapsed time" Style="{ThemeResource HeaderGridTextBlockStyle}" />
-                                <TextBlock Grid.Column="2" Grid.Row="1"
-                                           Text="{x:Bind ViewModel.PadDevice.ElapsedTime, Mode=OneWay, Converter={StaticResource ElapsedTimeToStringConverter}}"
-                                           Style="{ThemeResource CellGridTextBlockStyle}"/>
-                                <TextBlock Grid.Column="3" Grid.Row="0" Text="Temperature" Style="{ThemeResource HeaderGridTextBlockStyle}" />
-                                <TextBlock Grid.Column="3" Grid.Row="1" Text="{x:Bind ViewModel.EnvDevice.Temperature, Mode=OneWay, Converter={StaticResource FloatToTemperatureStringConverter}}" 
-                                        Foreground="{x:Bind ViewModel.EnvDevice.Temperature, Mode=OneWay, Converter={StaticResource TemperatureToBrushConverter}}"
-                                        Style="{ThemeResource CellGridTextBlockStyle}"/>
-                                <TextBlock Grid.Column="4" Grid.Row="0" Text="Humidity" Style="{ThemeResource HeaderGridTextBlockStyle}" />
-                                <TextBlock Grid.Column="4" Grid.Row="1" Text="{x:Bind ViewModel.EnvDevice.Humidity, Mode=OneWay, Converter={StaticResource FloatToHumidityStringConverter}}" 
-                                        Foreground="{x:Bind ViewModel.EnvDevice.Humidity, Mode=OneWay, Converter={StaticResource HumidityToBrushConverter}}"
-                                        Style="{ThemeResource CellGridTextBlockStyle}"/>
-
-                            </Grid>
-                        </StackPanel>
-                    </StackPanel>
-                    <telerikChart:RadCartesianChart PaletteName="DefaultDark" Height="300" x:Name="myChart">
-                        <telerikChart:RadCartesianChart.HorizontalAxis>
-                            <telerikChart:CategoricalAxis VerticalLocation="Bottom" Foreground="Transparent" Visibility="Visible" TickThickness="1"/>
-                            <!--   DateTimeCategoricalAxis VerticalLocation="Bottom" Foreground="#FFF" LabelFormat="{}{0:ss.fff}"/> -->
-                        </telerikChart:RadCartesianChart.HorizontalAxis>
-                        <telerikChart:RadCartesianChart.VerticalAxis>
-                            <telerikChart:LinearAxis 
-                HorizontalLocation="Left" 
-                Foreground="#FFF"
-                Minimum="{x:Bind ViewModel.PadDevice.AxisMinVoltage, Mode=OneWay}"
-                Maximum="{x:Bind ViewModel.PadDevice.AxisMaxVoltage, Mode=OneWay}"
-                />
-                        </telerikChart:RadCartesianChart.VerticalAxis>
-                        <telerikChart:RadCartesianChart.Grid>
-                            <telerikChart:CartesianChartGrid MajorStripLinesVisibility="XY" MajorGridLinesVisibility="XY">
-                                <telerikChart:CartesianChartGrid.MajorXLineStyle>
-                                    <Style TargetType="Line">
-                                        <Setter Property="Stroke"  Value="#11CACACA"/>
-                                        <Setter Property="StrokeDashArray" Value="10, 2"/>
-                                    </Style>
-                                </telerikChart:CartesianChartGrid.MajorXLineStyle>
-                                <telerikChart:CartesianChartGrid.YStripeBrushes>
-                                    <SolidColorBrush Color="#11CACACA"/>
-                                    <SolidColorBrush Color="Transparent"/>
-                                </telerikChart:CartesianChartGrid.YStripeBrushes>
-                            </telerikChart:CartesianChartGrid>
-                        </telerikChart:RadCartesianChart.Grid>
-
-                        <telerikChart:SplineSeries x:Name="myChartSerie4" Stroke="Orange">
-                            <telerikChart:SplineSeries.CategoryBinding>
-                                <telerikChart:PropertyNameDataPointBinding PropertyName="ElapsedTime"/>
-                            </telerikChart:SplineSeries.CategoryBinding>
-                            <telerikChart:SplineSeries.ValueBinding>
-                                <telerikChart:PropertyNameDataPointBinding PropertyName="HighVoltagePhase4"/>
-                            </telerikChart:SplineSeries.ValueBinding>
-                        </telerikChart:SplineSeries>
-
-                        <telerikChart:SplineSeries x:Name="myChartSerie3" Stroke="Red">
-                            <telerikChart:SplineSeries.CategoryBinding>
-                                <telerikChart:PropertyNameDataPointBinding PropertyName="ElapsedTime"/>
-                            </telerikChart:SplineSeries.CategoryBinding>
-                            <telerikChart:SplineSeries.ValueBinding>
-                                <telerikChart:PropertyNameDataPointBinding PropertyName="HighVoltagePhase3"/>
-                            </telerikChart:SplineSeries.ValueBinding>
-                        </telerikChart:SplineSeries>
-
-                        <telerikChart:SplineSeries x:Name="myChartSerie2" Stroke="Blue">
-                            <telerikChart:SplineSeries.CategoryBinding>
-                                <telerikChart:PropertyNameDataPointBinding PropertyName="ElapsedTime"/>
-                            </telerikChart:SplineSeries.CategoryBinding>
-                            <telerikChart:SplineSeries.ValueBinding>
-                                <telerikChart:PropertyNameDataPointBinding PropertyName="HighVoltagePhase2"/>
-                            </telerikChart:SplineSeries.ValueBinding>
-                        </telerikChart:SplineSeries>
-
-                        <telerikChart:SplineSeries x:Name="myChartSerie1" Stroke="Red">
-                            <telerikChart:SplineSeries.CategoryBinding>
-                                <telerikChart:PropertyNameDataPointBinding PropertyName="ElapsedTime"/>
-                            </telerikChart:SplineSeries.CategoryBinding>
-                            <telerikChart:SplineSeries.ValueBinding>
-                                <telerikChart:PropertyNameDataPointBinding PropertyName="HighVoltagePhase1"/>
-                            </telerikChart:SplineSeries.ValueBinding>
-                        </telerikChart:SplineSeries>
-                    </telerikChart:RadCartesianChart>
-                </StackPanel>
-            </Expander>
-
-
-
-
-
-
-            <StackPanel Orientation="Horizontal" Width="400" HorizontalAlignment="Left">
-                <Button Width="200"
-                    Content="Pad Start"
-                    HorizontalAlignment="Stretch"
-                    Margin="3 3 0 0"
-                    Command="{x:Bind ViewModel.PadStartCommand}"/>
-                <Button Width="200"
-                    Content="Pad Stop"
-                    HorizontalAlignment="Stretch"
-                    Margin="3 3 0 0"
-                    Command="{x:Bind ViewModel.PadStopCommand}"/>
             </StackPanel>
-        </StackPanel>
-    </Grid>
+        </telerikPrimitives:RadSideDrawer.DrawerContent>
+    </telerikPrimitives:RadSideDrawer>
+
 </Page>

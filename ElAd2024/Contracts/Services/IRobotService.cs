@@ -7,6 +7,8 @@ public interface IRobotService
     bool IsConnected { get; }
     List<string> FanucVisions { get; set; }
 
+    public PositionXYZWPR CurrentPosition { get; }
+
     /// <summary>Gets fanuc visions.</summary>
     void GetFanucVisions();
 
@@ -23,7 +25,6 @@ public interface IRobotService
     Task<bool> IsConnectedAsync();
     Task<bool> ConnectAsync();
     void ChangeOverride(int value);
-    public PositionXYZWPR CurrentPosition();
     string RobotVistionURL();
 
 }

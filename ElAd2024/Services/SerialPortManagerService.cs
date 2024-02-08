@@ -15,7 +15,7 @@ public class SerialPortManagerService
     private const string newLine = "\r\n";
     private DataWriter? dataWriter;
     private DataReader? dataReader;
-
+    private bool commandSent = false;
     private CancellationTokenSource? cancellationTokenSource;
 
     public SerialPortInfo? PortInfo
@@ -61,6 +61,7 @@ public class SerialPortManagerService
         ArgumentException.ThrowIfNullOrWhiteSpace(data, nameof(data));
         dataWriter?.WriteString(data + newLine);
         await dataWriter?.StoreAsync();
+        commandSent = true;
     }
 
 
@@ -71,7 +72,17 @@ public class SerialPortManagerService
         ArgumentNullException.ThrowIfNull(serialPortInfo);
 
         PortInfo = serialPortInfo;
-        Device = await SerialDevice.FromIdAsync(PortInfo?.Id);
+
+        //TODO: It crashes here!!!
+        try
+        {
+            Device = await SerialDevice.FromIdAsync(PortInfo?.Id);
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Error opening serial port: {ex.Message}");
+            // Handle the error appropriately
+        }
 
         if (Device is not null)
         {
@@ -124,8 +135,9 @@ public class SerialPortManagerService
             Debug.WriteLine("ReadAsync: Exception: " + ex.Message);
             // Handle other exceptions if necessary
         }
+        commandSent = false;
     }
-    public void CloseSerialPort()
+    public async void CloseSerialPort()
     {
         try
         {
@@ -135,15 +147,29 @@ public class SerialPortManagerService
         }
         catch (Exception ex)
         {
-            Debug.WriteLine("CloseSerialPort: Exception: " + ex.Message);
+            Debug.WriteLine("CloseSerialPort: cancellationTokenSource Exception: " + ex.Message);
         }
 
-        dataWriter?.DetachStream();
-        dataWriter?.Dispose();
+        try
+        {
+            dataWriter?.DetachStream();
+            dataWriter?.Dispose();
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine("CloseSerialPort: dataWriter Exception: " + ex.Message);
+        }
         dataWriter = null;
-
-        dataReader?.DetachStream();
-        dataReader?.Dispose();
+        
+        try
+        {
+            dataReader?.DetachStream();
+            dataReader?.Dispose();
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine("CloseSerialPort: dataReader Exception: " + ex.Message);
+        }
         dataReader = null;
 
         Device?.Dispose();

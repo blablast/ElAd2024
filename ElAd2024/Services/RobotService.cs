@@ -13,6 +13,17 @@ using CommunityToolkit.Mvvm.ComponentModel;
 namespace ElAd2024.Services;
 public partial class RobotService(string IPAddress) : ObservableRecipient, IRobotService
 {
+    public enum GotoPositionType
+    {
+        None = 0,
+        Load = 11,
+        LoadPlus = 12,
+        Unload = 21,
+        UnloadPlus = 22,
+        Home = 100,
+    }
+
+
     #region Fields
     private string connectionResult = string.Empty;
     private readonly int pingAttempts = 20;
@@ -108,7 +119,7 @@ public partial class RobotService(string IPAddress) : ObservableRecipient, IRobo
     public void ChangeOverride(int value)
         => SetValue($"http://{IPAddress}:3080/COMET/rpc?func=CHGOVRD&ovrd_val={value}").GetAwaiter().GetResult();
 
-    public PositionXYZWPR CurrentPosition()
+    public PositionXYZWPR CurrentPosition
         => (new PositionXYZWPR()).Decode(GetValue<ResponseRPC>($"http://{IPAddress}/COMET/rpc?func=TXML_CURPOS&pos_rep=1&pos_type=1&grp_num=1").GetAwaiter().GetResult()?.FANUC.RPC[0].Value) ?? new PositionXYZWPR();
 
     // http://ROBOTIP/KCL/set%20port%20DOUT[1]=1 SET DO0 to 0
@@ -333,52 +344,19 @@ public class PositionXYZWPR
         return match.Success ? this : null;
     }
     public void Deconstruct(out double? x, out double? y, out double? z, out double? w, out double? p, out double? r)
-    {
-        x = X;
-        y = Y;
-        z = Z;
-        w = W;
-        p = P;
-        r = R;
-    }
+    { x = X; y = Y; z = Z; w = W; p = P; r = R; }
 
     private static double? ParseAndRound(string value)
-    {
-        if (double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsedValue))
-        {
-            return Math.Round(parsedValue, 2);
-        }
-        return null;
-    }
+        => (double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsedValue)) ? Math.Round(parsedValue, 2) : null;
 
-    public double? X
-    {
-        get; set;
-    }
-    public double? Y
-    {
-        get; set;
-    }
-    public double? Z
-    {
-        get; set;
-    }
-    public double? W
-    {
-        get; set;
-    }
-    public double? P
-    {
-        get; set;
-    }
-    public double? R
-    {
-        get; set;
-    }
+    public double? X { get; set; }
+    public double? Y { get; set; }
+    public double? Z { get; set; }
+    public double? W { get; set; }
+    public double? P { get; set; }
+    public double? R { get; set; }
     public bool IsValid => this is not null && X is not null && Y is not null && Z is not null && W is not null && P is not null && R is not null;
 
     public override string ToString()
-    {
-        return $"X: {X} Y: {Y} Z: {Z} W: {W} P: {P} R: {R}";
-    }
+        => $"X: {X} Y: {Y} Z: {Z} W: {W} P: {P} R: {R}";
 }

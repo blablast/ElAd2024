@@ -111,4 +111,7 @@
   <data name="Shell_ManageBatches.Content" xml:space="preserve">
     <value>ManageBatches</value>
   </data>
+  <data name="Shell_TestResults.Content" xml:space="preserve">
+    <value>TestResults</value>
+  </data>
 </root>

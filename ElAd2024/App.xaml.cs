@@ -75,6 +75,8 @@ public partial class App : Application
             services.AddSingleton<IFileService, FileService>();
 
             // Views and ViewModels
+            services.AddTransient<TestResultsViewModel>();
+            services.AddTransient<TestResultsPage>();
             services.AddTransient<ManageBatchesViewModel>();
             services.AddTransient<ManageBatchesPage>();
             services.AddTransient<SettingsViewModel>();
@@ -83,6 +85,7 @@ public partial class App : Application
             services.AddTransient<MainPage>();
             services.AddTransient<ShellPage>();
             services.AddTransient<ShellViewModel>();
+            services.AddTransient<ProceedTestService>();
 
             // Configuration
             services.Configure<LocalSettingsOptions>(context.Configuration.GetSection(nameof(LocalSettingsOptions)));
@@ -103,6 +106,7 @@ public partial class App : Application
     protected async override void OnLaunched(LaunchActivatedEventArgs args)
     {
         base.OnLaunched(args);
+        await App.GetService<ILocalSettingsService>().InitializeAsync();
         await App.GetService<IDatabaseService>().InitializeAsync();
         //App.GetService<IAppNotificationService>().Show(string.Format("AppNotificationSamplePayload".GetLocalized(), AppContext.BaseDirectory));
 

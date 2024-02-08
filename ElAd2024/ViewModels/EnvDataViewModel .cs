@@ -8,7 +8,7 @@ public partial class EnvDataViewModel(SerialPortInfo serialPortInfo) : BaseSeria
     [ObservableProperty] private float temperature;
     [ObservableProperty] private float humidity;
 
-    protected async override Task OnConnected()
+    protected async override Task StopDevice()
     {
         await Task.Delay(1000);
         await SendDataAsync("SEND AUTO ON");
