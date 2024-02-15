@@ -1,9 +1,9 @@
 ﻿using System.Text.RegularExpressions;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using ElAd2024.Contracts.Services;
-using ElAd2024.Core.Contracts.Services;
-using ElAd2024.Core.Helpers;
 using ElAd2024.Helpers;
+using ElAd2024.Helpers.General;
 using ElAd2024.Models;
 using Microsoft.Extensions.Options;
 using Windows.Storage;
@@ -12,33 +12,6 @@ namespace ElAd2024.Services;
 
 public partial class LocalSettingsService : ObservableRecipient, ILocalSettingsService
 {
-    #region Fields and Constants
-
-    private const string defaultApplicationDataFolder = "ElAd2024/ApplicationData";
-    private const string defaultLocalSettingsFile = "LocalSettings.json";
-    private readonly IFileService fileService;
-    private readonly LocalSettingsOptions options;
-    private readonly string localApplicationData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-    private readonly string applicationDataFolder;
-    private readonly string localsettingsFile;
-    private IDictionary<string, object> settings;
-    private bool isInitialized;
-
-    #endregion
-
-    #region Properties
-
-    [ObservableProperty] private SerialPortInfo? envDeviceSettings;
-    [ObservableProperty] private SerialPortInfo? scaleDeviceSettings;
-    [ObservableProperty] private SerialPortInfo? padDeviceSettings;
-
-    [ObservableProperty] private int robotGotoPositionRegister;
-    [ObservableProperty] private int robotInPositionRegister;
-    [ObservableProperty] private int robotLoadForceRegister;
-    [ObservableProperty] private string? robotIPAddress;
-
-    #endregion
-
     #region Constructor
 
     public LocalSettingsService(IFileService fileService, IOptions<LocalSettingsOptions> options)
@@ -47,13 +20,14 @@ public partial class LocalSettingsService : ObservableRecipient, ILocalSettingsS
         this.options = options.Value;
 
         // Initialize paths for application data and settings file
-        applicationDataFolder = Path.Combine(localApplicationData, this.options.ApplicationDataFolder ?? defaultApplicationDataFolder);
-        localsettingsFile = this.options.LocalSettingsFile ?? defaultLocalSettingsFile;
+        applicationDataFolder = Path.Combine(localApplicationData,
+            this.options.ApplicationDataFolder ?? DefaultApplicationDataFolder);
+        localSettingsFile = this.options.LocalSettingsFile ?? DefaultLocalSettingsFile;
 
         settings = new Dictionary<string, object>();
     }
 
-    #endregion
+    #endregion Constructor
 
     #region Initialization
 
@@ -61,26 +35,81 @@ public partial class LocalSettingsService : ObservableRecipient, ILocalSettingsS
     public async Task InitializeAsync()
     {
         isInitialized = true;
-        settings = await Task.Run(() => fileService.Read<IDictionary<string, object>>(applicationDataFolder, localsettingsFile)) ?? new Dictionary<string, object>();
+        settings = await Task.Run(() =>
+                       fileService.Read<IDictionary<string, object>>(applicationDataFolder, localSettingsFile)) ??
+                   new Dictionary<string, object>();
 
         // Load settings for each device and other configuration
         EnvDeviceSettings = await ReadSettingAsync<SerialPortInfo>(nameof(EnvDeviceSettings)) ?? new SerialPortInfo();
-        ScaleDeviceSettings = await ReadSettingAsync<SerialPortInfo>(nameof(ScaleDeviceSettings)) ?? new SerialPortInfo();
+        ScaleDeviceSettings =
+            await ReadSettingAsync<SerialPortInfo>(nameof(ScaleDeviceSettings)) ?? new SerialPortInfo();
         PadDeviceSettings = await ReadSettingAsync<SerialPortInfo>(nameof(PadDeviceSettings)) ?? new SerialPortInfo();
+       
         RobotGotoPositionRegister = await ReadSettingAsync<int>(nameof(RobotGotoPositionRegister));
         RobotInPositionRegister = await ReadSettingAsync<int>(nameof(RobotInPositionRegister));
         RobotLoadForceRegister = await ReadSettingAsync<int>(nameof(RobotLoadForceRegister));
-        RobotIPAddress = await ReadSettingAsync<string>(nameof(RobotIPAddress)) ?? string.Empty;
+        RobotIsTouchSkipRegister = await ReadSettingAsync<int>(nameof(RobotIsTouchSkipRegister));
+        RobotRunRegister = await ReadSettingAsync<int>(nameof(RobotRunRegister));
+        RobotIpAddress = await ReadSettingAsync<string>(nameof(RobotIpAddress)) ?? string.Empty;
+        Parameters = await ReadSettingAsync<TestParameters>(nameof(Parameters)) ?? new TestParameters();
+        Simulate = await ReadSettingAsync<bool>(nameof(Simulate));
     }
 
-    #endregion
+    #endregion Initialization
+
+    #region IDisposable Implementation
+
+    public static void Dispose()
+    {
+        // Dispose logic if necessary
+    }
+
+    #endregion IDisposable Implementation
+
+    #region Fields and Constants
+
+    private const string DefaultApplicationDataFolder = "ElAd2024/ApplicationData";
+    private const string DefaultLocalSettingsFile = "LocalSettings.json";
+    private readonly IFileService fileService;
+    private readonly LocalSettingsOptions options;
+
+    private readonly string localApplicationData =
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+
+    private readonly string applicationDataFolder;
+    private readonly string localSettingsFile;
+    private IDictionary<string, object> settings;
+    private bool isInitialized;
+
+    #endregion Fields and Constants
+
+    #region Properties
+
+    [ObservableProperty] private SerialPortInfo? envDeviceSettings;
+    [ObservableProperty] private SerialPortInfo? scaleDeviceSettings;
+    [ObservableProperty] private SerialPortInfo? padDeviceSettings;
+
+    [ObservableProperty] private int robotGotoPositionRegister = 1;
+    [ObservableProperty] private int robotLoadForceRegister = 2;
+    [ObservableProperty] private int robotInPositionRegister = 1;
+    [ObservableProperty] private int robotRunRegister = 2;
+    [ObservableProperty] private int robotIsTouchSkipRegister = 3;
+    [ObservableProperty] private string? robotIpAddress;
+    [ObservableProperty] private bool simulate;
+
+    [ObservableProperty] private TestParameters parameters = new();
+
+    #endregion Properties
 
     #region Settings Operations
 
     // Reads a setting value by key
     public async Task<T?> ReadSettingAsync<T>(string key)
     {
-        if (!isInitialized) { throw new InvalidOperationException("Service not initialized"); }
+        if (!isInitialized)
+        {
+            throw new InvalidOperationException("Service not initialized");
+        }
 
         // Retrieve settings depending on the application packaging
         if (RuntimeHelper.IsMSIX)
@@ -90,10 +119,11 @@ public partial class LocalSettingsService : ObservableRecipient, ILocalSettingsS
                 return await Json.ToObjectAsync<T>((string)obj);
             }
         }
-        else if (settings != null && settings.TryGetValue(key, out var obj))
+        else if (settings.TryGetValue(key, out var obj))
         {
             return await Json.ToObjectAsync<T>((string)obj);
         }
+
         return default;
     }
 
@@ -112,9 +142,13 @@ public partial class LocalSettingsService : ObservableRecipient, ILocalSettingsS
         }
         else
         {
-            if (!isInitialized) { throw new InvalidOperationException("Service not initialized"); }
+            if (!isInitialized)
+            {
+                throw new InvalidOperationException("Service not initialized");
+            }
+
             settings[key] = await Json.StringifyAsync(value);
-            await Task.Run(() => fileService.Save(applicationDataFolder, localsettingsFile, settings));
+            await Task.Run(() => fileService.Save(applicationDataFolder, localSettingsFile, settings));
         }
     }
 
@@ -126,42 +160,53 @@ public partial class LocalSettingsService : ObservableRecipient, ILocalSettingsS
         await SaveSettingAsync(nameof(PadDeviceSettings), PadDeviceSettings);
     }
 
-    #endregion
+    public async Task SaveParametersAsync() => await SaveSettingAsync(nameof(Parameters), Parameters);
+
+    #endregion Settings Operations
 
     #region Helpers
 
+    async partial void OnRobotInPositionRegisterChanged(int value) =>
+        await SaveSettingAsync(nameof(RobotInPositionRegister), value);
+    async partial void OnRobotRunRegisterChanged(int value) =>
+        await SaveSettingAsync(nameof(RobotRunRegister), value);
+    async partial void OnRobotIsTouchSkipRegisterChanged(int value) =>
+        await SaveSettingAsync(nameof(RobotIsTouchSkipRegister), value);
+    async partial void OnRobotGotoPositionRegisterChanged(int value)
+    => await SaveSettingAsync(nameof(RobotGotoPositionRegister), value);
+    async partial void OnRobotLoadForceRegisterChanged(int value) =>
+        await SaveSettingAsync(nameof(RobotLoadForceRegister), value);
+
+
+    async partial void OnSimulateChanged(bool value) => await SaveSettingAsync(nameof(Simulate), value);
+
     // Validates the provided IP address using a regular expression
     [GeneratedRegex("^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$")]
-    private static partial Regex IPRegex();
+    private static partial Regex IpRegex();
 
-    // Invoked when the RobotIPAddress property changes, validates the new value
-    async partial void OnRobotIPAddressChanged(string? value)
+    // Invoked when the RobotIpAddress property changes, validates the new value
+    async partial void OnRobotIpAddressChanged(string? value)
     {
         value ??= string.Empty;
-        if (value.Length == 0 || IPRegex().IsMatch(value))
+        if (value.Length == 0 || IpRegex().IsMatch(value))
         {
-            await SaveSettingAsync(nameof(RobotIPAddress), value);
+            await SaveSettingAsync(nameof(RobotIpAddress), value);
         }
         else
         {
-            RobotIPAddress = string.Empty;
+            RobotIpAddress = string.Empty;
         }
     }
 
-    // Invoked when RobotGotoPositionRegister property changes, saves the new value
-    async partial void OnRobotGotoPositionRegisterChanged(int value)
-        => await SaveSettingAsync(nameof(RobotGotoPositionRegister), value);
-
-    // Similar partial methods for other properties...
-
-    #endregion
-
-    #region IDisposable Implementation
-
-    public void Dispose()
+    [RelayCommand]
+    public async Task ResetAsync()
     {
-        // Dispose logic if necessary
+        await Task.CompletedTask;
+        //fileService.Delete(applicationDataFolder, localSettingsFile));
+        
+
     }
 
-    #endregion
+
+    #endregion Helpers
 }

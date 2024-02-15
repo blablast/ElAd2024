@@ -16,7 +16,7 @@ public class IntToGramsStringConverter : IValueConverter
 public class BoolToGreenRedColorConverter : IValueConverter
 {
     public object Convert(object value, Type targetType, object parameter, string language)
-    => (value is bool targetValue && targetValue) ? new SolidColorBrush(Colors.Green) : new SolidColorBrush(Colors.Red);
+    => value is true ? new SolidColorBrush(Colors.Green) : new SolidColorBrush(Colors.Red);
 
     public object ConvertBack(object value, Type targetType, object parameter, string language)
         => throw new NotImplementedException();

@@ -15,15 +15,9 @@ public partial class ShellViewModel : ObservableRecipient
     [ObservableProperty]
     private object? selected;
 
-    public INavigationService NavigationService
-    {
-        get;
-    }
+    public INavigationService NavigationService { get; }
 
-    public INavigationViewService NavigationViewService
-    {
-        get;
-    }
+    public INavigationViewService NavigationViewService { get; }
 
     public ShellViewModel(INavigationService navigationService, INavigationViewService navigationViewService)
     {

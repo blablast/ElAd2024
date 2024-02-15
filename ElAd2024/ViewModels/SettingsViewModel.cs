@@ -2,11 +2,13 @@
 
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-
+using ElAd2024.Contracts.Devices;
 using ElAd2024.Contracts.Services;
-using ElAd2024.Helpers;
+using ElAd2024.Helpers.General;
 using ElAd2024.Models;
 using ElAd2024.Services;
+using ElAd2024.Views;
+using Microsoft.UI.Xaml;
 
 namespace ElAd2024.ViewModels;
 
@@ -14,10 +16,16 @@ public partial class SettingsViewModel : ObservableRecipient
 {
     #region Fields
     private readonly IThemeSelectorService themeSelectorService;
+    private XamlRoot? xamlRoot;
     #endregion
 
     #region Properties
-    public ILocalSettingsService LocalSettingsService { get; set; }
+    public ILocalSettingsService LocalSettingsService
+    {
+        get; private set;
+    }
+    private readonly IDatabaseService databaseService;
+
 
     [ObservableProperty] private string selectedEnvDevicePort = string.Empty;
     partial void OnSelectedEnvDevicePortChanged(string value)
@@ -33,19 +41,30 @@ public partial class SettingsViewModel : ObservableRecipient
 
     [ObservableProperty] private Microsoft.UI.Xaml.ElementTheme elementTheme;
     [ObservableProperty] private string versionDescription;
+    [ObservableProperty] private IAllDevices allDevices;
     public ObservableCollection<string?> AvailableSerialPorts { get; set; } = [];
     #endregion
 
     #region Constructors
-    public SettingsViewModel(ILocalSettingsService localSettingsService, IThemeSelectorService themeSelectorService)
+    public SettingsViewModel(ILocalSettingsService localSettingsService, IThemeSelectorService themeSelectorService, IDatabaseService databaseService, IAllDevices allDevices)
     {
+        AllDevices = allDevices;
         this.themeSelectorService = themeSelectorService;
         LocalSettingsService = localSettingsService;
+        this.databaseService = databaseService;
         ElementTheme = this.themeSelectorService.Theme;
         VersionDescription = GetVersionDescription();
         LoadAvailableSerialPortsAndInitializeSettings();
     }
+    #endregion
 
+    #region Public Methods
+    public async Task InitializeAsync(XamlRoot? xamlRoot)
+    {
+        this.xamlRoot = xamlRoot;
+        //await themeSelectorService.InitializeAsync();
+        await Task.CompletedTask;
+    }
     #endregion
 
     #region Private Methods
@@ -71,7 +90,7 @@ public partial class SettingsViewModel : ObservableRecipient
         if (RuntimeHelper.IsMSIX)
         {
             var packageVersion = Windows.ApplicationModel.Package.Current.Id.Version;
-            version = new(packageVersion.Major, packageVersion.Minor, packageVersion.Build, packageVersion.Revision);
+            version = new Version(packageVersion.Major, packageVersion.Minor, packageVersion.Build, packageVersion.Revision);
         }
         else
         {
@@ -98,6 +117,17 @@ public partial class SettingsViewModel : ObservableRecipient
     private async Task SaveSettings()
         => await LocalSettingsService.SaveSerialsAsync();
 
+    [RelayCommand]
+    private async Task ResetSettings()
+    {
+        if (await CustomContentDialog.ShowYesNoQuestionAsync(xamlRoot, "Delete Database",
+                    $"Do you really want to remove database and recreate it (all data will be lost)?"))
+        {
+            await databaseService.Context.Database.EnsureDeletedAsync();
+            await databaseService.Context.Database.EnsureCreatedAsync();
+            //await localSettingsService.ResetAsync();
+        }
+    }
     #endregion
 
 }

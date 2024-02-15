@@ -1,19 +1,22 @@
 ﻿using System.Collections.ObjectModel;
-using ElAd2024.Core.Models;
-using ElAd2024.Services;
+using CommunityToolkit.Mvvm.ComponentModel;
+using ElAd2024.Models.Database;
 using ElAd2024.ViewModels;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Navigation;
-using Telerik.UI.Xaml;
 using Telerik.UI.Xaml.Controls.Primitives;
+using Windows.Media.Capture;
+using Windows.Media.Core;
+using Windows.Media.Playback;
 
 namespace ElAd2024.Views;
 
+[ObservableObject]
 public sealed partial class MainPage : Page
 {
     private RadSideDrawer radSideDrawer = new();
+    [ObservableProperty] private IMediaPlaybackSource? cameraPlayback;
     public MainViewModel ViewModel
     {
         get;
@@ -42,19 +45,17 @@ public sealed partial class MainPage : Page
     private async void OnLoaded(object sender, RoutedEventArgs e)
     {
         await ViewModel.InitializeAsync(XamlRoot);
-        ViewModel.PadDevice.ChartDataCollection.CollectionChanged += OnChartDataCollectionChanged;
-        OnChartDataCollectionChanged(ViewModel.PadDevice.ChartDataCollection);
+        ArgumentNullException.ThrowIfNull(ViewModel.AllDevices.PadDevice);
+        ViewModel.AllDevices.PadDevice.Voltages.CollectionChanged += OnVoltagesChartDataCollectionChanged;
+        CameraPlayback = MediaSource.CreateFromMediaFrameSource(
+            ViewModel.AllDevices.CameraDevice.MediaCapture?.FrameSources[ViewModel.AllDevices.CameraDevice.SelectedMediaFrameSourceGroup?.SourceInfos[0].Id]);
     }
 
     private void OnUnloaded(object sender, RoutedEventArgs e)
     {
-        try
+        if (ViewModel.AllDevices.PadDevice is not null)
         {
-            ViewModel.PadDevice.ChartDataCollection.CollectionChanged -= OnChartDataCollectionChanged;
-        }
-        catch (System.Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine(ex.Message);
+            ViewModel.AllDevices.PadDevice.Voltages.CollectionChanged -= OnVoltagesChartDataCollectionChanged;
         }
         Loaded -= OnLoaded;
     }
@@ -79,30 +80,24 @@ public sealed partial class MainPage : Page
     }
 
     // Chart
-
-    private void OnChartDataCollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs? e = null)
+    private void OnVoltagesChartDataCollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs? e = null)
     {
-        if (sender is ObservableCollection<HVPlot> collection
-            && (e is null || e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Add))
+        if (e?.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Add)
         {
-            myChartSerie1.ItemsSource = collection;
-            myChartSerie2.ItemsSource = collection;
-            myChartSerie3.ItemsSource = collection;
-            myChartSerie4.ItemsSource = collection;
+            var voltages = sender is null ? [] : (ObservableCollection<Voltage>)sender;
+            voltagesChartSerie4.ItemsSource = voltages;
+            voltagesChartSerie3.ItemsSource = voltages.Where(v => v.Phase < 4);
+            voltagesChartSerie2.ItemsSource = voltages.Where(v => v.Phase < 3);
+            voltagesChartSerie1.ItemsSource = voltages.Where(v => v.Phase < 2);
         }
     }
 
     protected override void OnNavigatedFrom(NavigationEventArgs e)
     {
-        try
+        if (ViewModel.AllDevices.PadDevice is not null)
         {
-            ViewModel.PadDevice.ChartDataCollection.CollectionChanged -= OnChartDataCollectionChanged;
+            ViewModel.AllDevices.PadDevice.Voltages.CollectionChanged -= OnVoltagesChartDataCollectionChanged;
         }
-        catch (System.Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine(ex.Message);
-        }
-
         ViewModel.Dispose();
         base.OnNavigatedFrom(e);
     }

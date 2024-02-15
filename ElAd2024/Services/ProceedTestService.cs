@@ -1,419 +1,374 @@
-﻿using System.Collections.Specialized;
-using System.ComponentModel;
-using System.Diagnostics;
+﻿using System.ComponentModel;
+using System.Reflection;
 using CommunityToolkit.Mvvm.ComponentModel;
+using ElAd2024.Contracts.Devices;
 using ElAd2024.Contracts.Services;
+using ElAd2024.Devices;
 using ElAd2024.Helpers;
 using ElAd2024.Models;
+using ElAd2024.Models.Database;
 using ElAd2024.ViewModels;
 using Microsoft.UI.Dispatching;
+using Windows.Media.Core;
+
 namespace ElAd2024.Services;
-public partial class ProceedTestService : ObservableRecipient, IDisposable
+
+public partial class ProceedTestService : ObservableRecipient, IProceedTestService
 {
-    public enum ErrorType
+
+    #region IDisposable
+
+    public void Dispose()
     {
-        None,
-        WeightIsZero,
+
+        AllDevices.PadDevice.PropertyChanged -= PadDevice_PropertyChanged;
+        AlgorithmSteps?.Stop();
+        robotTimer?.Dispose();
+        awaitPadTimer?.Dispose();
+        GC.SuppressFinalize(this);
     }
 
+    #endregion IDisposable
 
     #region Fields
 
-    private readonly int robotTimerPeriod = 100;
-    private readonly DispatcherQueue dispatcherQueue;
-    private readonly Timer robotTimer;
     private readonly Timer awaitPadTimer;
+    private readonly DispatcherQueue dispatcherQueue;
+    private bool isRobotTimerOn;
     private readonly ILocalSettingsService localSettingsService;
+    private readonly IDatabaseService databaseService;
+    private readonly Timer robotTimer;
+    private readonly int robotTimerPeriod = 100;
 
-
-    private readonly bool robotSimulation = true;
-
-    #endregion
-
+    #endregion Fields
 
     #region Properties
 
-    [ObservableProperty] private bool isRunning;
-    [ObservableProperty] private ErrorType error;
-    [ObservableProperty] private Test? testObject;
-    [ObservableProperty] private TestParameters? parameters;
-
     // Collection of test steps
-    public ObservableCollectionNotifyPropertyChange<TestStep> Steps =
-        [
-            new ("Setup:\nPad\nRobot", "", TestStep.StepType.Computer, 0),
-            new ("Check:\nEnviroment", "", TestStep.StepType.Enviroment, 10),
-            new ("Move To:\nLoad+\nPosition", "", TestStep.StepType.Robot, 20),
-            new ("Take\n1st photo", "", TestStep.StepType.Computer, 30),
-            new ("Read\n1st weight", "", TestStep.StepType.Scale, 40),
-            new ("TouchSkip\nLoad\nPosition", "", TestStep.StepType.Robot, 50),
-            new ("Charge\nFabric", "", TestStep.StepType.Pad, 60),
-            new ("Load\nFabric", "", TestStep.StepType.Pad, 70),
-            new ("Move To\nLoad+\nPosition", "", TestStep.StepType.Robot, 80),
-            new ("Read\n2nd weight", "", TestStep.StepType.Scale, 90),
-            new ("Move To\nObserving\nPosition", "", TestStep.StepType.Robot, 100),
-            new ("Take\n2nd photo", "", TestStep.StepType.Computer, 110),
-            new ("Observing\nFabric", "", TestStep.StepType.Pad, 120),
-            new ("Read\n3rd weight", "", TestStep.StepType.Scale, 130),
-            new ("Move To\nUnload+\nPosition", "", TestStep.StepType.Robot, 140),
-            new ("TouchSkip\nUnload\nPosition", "", TestStep.StepType.Robot, 150),
-            new ("Release\nFabric", "", TestStep.StepType.Pad, 160),
-            new ("Move To\nUnload+\nPosition", "", TestStep.StepType.Robot, 170),
-            new ("Move To\nObserving\nPosition", "", TestStep.StepType.Robot, 180),
-        ];
+    public ObservableCollectionNotifyPropertyChange<AlgorithmStepViewModel> AlgorithmSteps { get; set; } = [];
 
-    [ObservableProperty] private EnvDataViewModel? envDevice;
-    [ObservableProperty] private PadDataViewModel? padDevice;
-    [ObservableProperty] private ScaleDataViewModel? scaleDevice;
-    [ObservableProperty] private CameraService? cameraDevice;
-    [ObservableProperty] private RobotService? robotDevice;
     [ObservableProperty] private int currentStep = -1;
 
-    #endregion
+    [ObservableProperty] private IProceedTestService.ErrorType error;
+    [ObservableProperty] private bool isRunning;
 
+    [ObservableProperty] private IAllDevices allDevices;
+    [ObservableProperty] private TestParameters? parameters;
+    [ObservableProperty] private Test currentTest = new();
+
+    #endregion Properties
 
     #region Constructor
 
-    public ProceedTestService(ILocalSettingsService localSettingsService)
+    public ProceedTestService(IAllDevices allDevices, ILocalSettingsService localSettingsService, IDatabaseService databaseService)
     {
+        this.databaseService = databaseService;
         this.localSettingsService = localSettingsService;
         dispatcherQueue = DispatcherQueue.GetForCurrentThread();
-
-        Steps.Start(OnStepChanged);
+        AllDevices = allDevices;
 
         // Initialize timers
         robotTimer = new Timer(CheckRobotPosition, null, Timeout.Infinite, 0);
         awaitPadTimer = new Timer(AwaitPadTimerCallback, null, Timeout.Infinite, 0);
     }
 
-    #endregion
+    #endregion Constructor
 
     #region Public Methods
-
-    public void Start()
+    public async Task StartTest()
     {
-        // Validate dependencies
-        ValidateDependencies();
-        if (ScaleDevice is null || ScaleDevice.Weight == 0)
+        ArgumentNullException.ThrowIfNull(Parameters, nameof(Parameters));
+
+        if (AllDevices.ScaleDevice.Weight == 0)
         {
-            Error = ErrorType.WeightIsZero;
+            Error = IProceedTestService.ErrorType.WeightIsZero;
             return;
         }
 
         IsRunning = true;
+        AllDevices.PadDevice.PropertyChanged += PadDevice_PropertyChanged;
+
+
         CurrentStep = 0;
+
+        await Task.CompletedTask;
+    }
+    public async Task InitializeStepsAsync(int algorithmId = 1)
+    {
+
+        AlgorithmSteps.Stop();
+        AlgorithmSteps.Clear();
+        var dbAs = databaseService.AlgorithmSteps?.Where(a => a.AlgorithmId == algorithmId).OrderBy(a => a.Order).ToList() ?? [];
+        foreach (var algorithmStep in dbAs)
+        {
+            AlgorithmSteps.Add(new AlgorithmStepViewModel(algorithmStep));
+        }
+        AlgorithmSteps.Start(OnAlgorithmStepChanged);
+
+        dispatcherQueue.TryEnqueue(() =>
+        {
+            AlgorithmSteps.ToList().ForEach(step => step.Reset());
+            AlgorithmSteps.ToList().ForEach(step => step.Opacity=0.5);
+        });
+        await Task.Delay(10);
+
+        await Task.CompletedTask;
     }
 
-    #endregion
+    #endregion Constructor
 
     #region Private Methods
-    private void ValidateDependencies()
+    private Func<string?, Task> GetMethodAsFunc(string methodName)
     {
-        // Ensures all necessary devices and settings are available before starting
-        ArgumentNullException.ThrowIfNull(TestObject, nameof(TestObject));
-        ArgumentNullException.ThrowIfNull(Parameters, nameof(Parameters));
-
-        ArgumentNullException.ThrowIfNull(CameraDevice, nameof(CameraDevice));
-        ArgumentNullException.ThrowIfNull(EnvDevice, nameof(EnvDevice));
-        ArgumentNullException.ThrowIfNull(PadDevice, nameof(PadDevice));
-        ArgumentNullException.ThrowIfNull(RobotDevice, nameof(RobotDevice));
-        ArgumentNullException.ThrowIfNull(ScaleDevice, nameof(ScaleDevice));
+        var methodInfo =
+            typeof(ProceedTestService).GetMethod(methodName,
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic) ??
+            throw new ArgumentException($"Method '{methodName}' not found.");
+        return (Func<string?, Task>)Delegate.CreateDelegate(typeof(Func<string?, Task>), this, methodInfo);
     }
-
-    private void OnStepChanged(object? sender, PropertyChangedEventArgs e) => Steps?.ForceRefresh(sender);
-
-    partial void OnPadDeviceChanging(PadDataViewModel? oldValue, PadDataViewModel? newValue)
+    async partial void OnCurrentStepChanged(int value)
     {
-        if (oldValue is not null) { oldValue.PropertyChanged -= PadDevice_PropertyChanged; }
-        if (newValue is not null) { newValue.PropertyChanged += PadDevice_PropertyChanged; }
-    }
-    private void PadDevice_PropertyChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        if (IsRunning && e.PropertyName == nameof(PadDataViewModel.PhaseNumber) && (PadDevice?.PhaseNumber == 2 || PadDevice?.PhaseNumber == 4))
+
+        //if (value < Steps.Count)
+        if (value < AlgorithmSteps?.Count)
         {
-            dispatcherQueue?.TryEnqueue(()
-                =>
-            {
-                DeadStep($"Done!\n{PadDevice.HighVoltage}[V]", CurrentStep);
-                CurrentStep++;
-            });
+            Func<string?, Task> method = GetMethodAsFunc(AlgorithmSteps[value].AlgorithmStep!.Step.AsyncActionName);
+            CurrentTest.TestSteps.Add(
+                       new TestStep
+                       {
+                           Step = AlgorithmSteps[value].AlgorithmStep!.Step,
+                           ActionParameter = AlgorithmSteps[value].AlgorithmStep!.ActionParameter,
+                           FrontName = AlgorithmSteps[value].AlgorithmStep!.FrontName
+                       });
+            await method(AlgorithmSteps[value].ActionParameter);
         }
     }
 
-    #endregion
+    private void OnAlgorithmStepChanged(object? sender, PropertyChangedEventArgs e)
+        => AlgorithmSteps?.ForceRefresh(sender);
 
+    private async void PadDevice_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (!IsRunning || e.PropertyName != nameof(AllDevices.PadDevice.Phase) || AllDevices.PadDevice.Phase is not (2 or 4))
+        {
+            return;
+        }
+        await DeadStep($"Done!\n{AllDevices.PadDevice.Voltages.LastOrDefault(v => v.Phase == AllDevices.PadDevice.Phase - 1)?.Value}[V]", CurrentStep);
+    }
+
+    #endregion Private Methods
 
     #region Process Cycle
 
-    async partial void OnCurrentStepChanged(int value)
-    {
-        ArgumentNullException.ThrowIfNull(TestObject, nameof(TestObject));
-        ArgumentNullException.ThrowIfNull(PadDevice, nameof(PadDevice));
-        ArgumentNullException.ThrowIfNull(Parameters, nameof(Parameters));
-
-        if (!IsRunning) { return; }
-        switch (value)
-        {
-            case 0:
-                await SetupPadAndRobot();
-                break;
-            case 1:
-                await CheckEnviroment();
-                break;
-            case 2:
-                await RobotMoveTo(RobotService.GotoPositionType.LoadPlus);
-                break;
-            case 3:
-                //                TestObject.Photos = new List<Photo>();
-                await TakeAPhoto("Ready to Load", $"photo{TestObject.TestId:D5}_start");
-                break;
-            case 4:
-                await GetWeight("FullStack");
-                break;
-            case 5:
-                await RobotMoveTo(RobotService.GotoPositionType.Load);
-                break;
-            case 6:
-                dispatcherQueue?.TryEnqueue(() => { AliveStep("Charging\nFabric..."); });
-                // Calculate Polarity voltage
-                await PadDevice.StartCycle(TestObject.IsPlusPolarity);
-                break;
-            case 7:
-                dispatcherQueue?.TryEnqueue(() => { AliveStep("Loading\nFabric..."); });
-                break;
-            case 8:
-                await RobotMoveTo(RobotService.GotoPositionType.LoadPlus);
-                break;
-            case 9:
-                await GetWeight("StackAfterLoad");
-                break;
-            case 10:
-                await RobotMoveTo(RobotService.GotoPositionType.Home);
-                break;
-            case 11:
-                await TakeAPhoto("Loaded", $"photo{TestObject.TestId:D5}_load");
-                break;
-            case 12:
-                dispatcherQueue?.TryEnqueue(() =>
-                {
-                    AliveStep("Observing\nFabric...");
-                });
-                awaitPadTimer.Change((int)Parameters.DurationObserving, 0);
-                break;
-            case 13:
-                await GetWeight("StackAfterTime");
-                break;
-            case 14:
-                await RobotMoveTo(RobotService.GotoPositionType.UnloadPlus);
-                break;
-            case 15:
-                await RobotMoveTo(RobotService.GotoPositionType.Unload);
-                break;
-            case 16:
-                await PadDevice.StopCycle();
-                dispatcherQueue?.TryEnqueue(() =>
-                {
-                    AliveStep("Releasing\nFabric...");
-                    CurrentStep++;
-                });
-                break;
-            case 17:
-                await RobotMoveTo(RobotService.GotoPositionType.UnloadPlus);
-                break;
-            case 18:
-                await RobotMoveTo(RobotService.GotoPositionType.Home);
-                break;
-            case 100:
-                // Save test data
-                TestObject.Voltages = new List<Voltage>(PadDevice.Voltages);
-                IsRunning = false;
-                break;
-            default:
-                CurrentStep++;
-                break;
-        }
-    }
-    private void AliveStep(string message)
+    private async Task AliveStep(string? message = null)
     {
         // Updates UI to indicate a step is currently being processed
-        int? counter = (int)CurrentStep;
-        Steps[counter.Value].Opacity = 1;
-        Steps[counter.Value].BackContent = message;
-        Steps[counter.Value].IsFrozen = false;
-    }
-
-    private void DeadStep(string message, int? counter = null)
-    {
-        // Marks a step as completed and updates its UI representation
-        counter ??= CurrentStep;
-        Steps[counter.Value].FlipSlow();
-        Steps[counter.Value].BackContent = message;
-    }
-
-    private async Task SetupPadAndRobot()
-    {
-        // Configures the pad and robot for the test
-        ArgumentNullException.ThrowIfNull(Parameters, nameof(Parameters));
-        ArgumentNullException.ThrowIfNull(PadDevice, nameof(PadDevice));
-        ArgumentNullException.ThrowIfNull(RobotDevice, nameof(RobotDevice));
-        ArgumentNullException.ThrowIfNull(TestObject, nameof(TestObject));
-
-        // Reset steps
-        Steps.ToList().ForEach(step => step.Reset());
-
-        // Prepare PAD
-        AliveStep("Setting\nup...");
-        await PadDevice.Setup([
-            (1, Parameters.HighVoltagePhase1),
-            (2, Parameters.HighVoltagePhase3),
-            (4, Parameters.DurationPhase1 / 100),
-            (5, Parameters.DurationPhase2 / 100),
-            (6, Parameters.DurationPhase3 / 100),
-            (8, (int)(Parameters.AutoRegulationHV ? 1 : 0)),
-        ]);
-
-        // Prepare DB
-        TestObject.Date = DateTime.Now;
-        TestObject.HVPhaseCharging = Parameters.HighVoltagePhase1;
-        TestObject.HVPhaseLoading = Parameters.HighVoltagePhase3;
-        TestObject.DurationPhaseCharging = Parameters.DurationPhase1;
-        TestObject.DurationPhaseIntermediary = Parameters.DurationPhase2;
-        TestObject.DurationPhaseLoading = Parameters.DurationPhase3;
-        TestObject.DurationPhaseObserving = Parameters.DurationObserving;
-        TestObject.LoadForce = Parameters.LoadForce;
-        TestObject.AutoRegulation = Parameters.AutoRegulationHV;
-        TestObject.IsPlusPolarity = !((int)((Parameters.Counter - 1) / Parameters.ChangePolarityStep) % 2 == 0 ^ Parameters.IsStartPlusPolarity);
-
-        // Prepare Robot
-        RobotDevice.SetRegister(localSettingsService.RobotLoadForceRegister, (int)Parameters.LoadForce);
-        RobotDevice.SetRegister(localSettingsService.RobotGotoPositionRegister, (int)RobotService.GotoPositionType.None);
-        DeadStep("Done!");
-        CurrentStep++;
-        await Task.CompletedTask;
-    }
-
-    private async Task CheckEnviroment()
-    {
-        // Checks environmental conditions before proceeding with the test
-
-        ArgumentNullException.ThrowIfNull(TestObject, nameof(TestObject));
-        ArgumentNullException.ThrowIfNull(EnvDevice, nameof(EnvDevice));
-
-        AliveStep("Checking\nEnviroment...");
-        TestObject.Temperature = EnvDevice.Temperature;
-        TestObject.Humidity = EnvDevice.Humidity;
-        DeadStep($"{EnvDevice.Temperature,2}°C\n{EnvDevice.Humidity,2}%");
-        CurrentStep++;
-        await Task.CompletedTask;
-    }
-
-    private async Task RobotMoveTo(object? position)
-    {
-        if (position is null || position is not RobotService.GotoPositionType)
+        int? counter = CurrentStep;
+        dispatcherQueue.TryEnqueue(() =>
         {
-            throw new ArgumentException("Invalid position", nameof(position));
-        }
-        await RobotMoveTo((RobotService.GotoPositionType)position);
+            AlgorithmSteps[counter.Value].Opacity = 1;
+            if (message?.Length > 0)
+            {
+                AlgorithmSteps[counter.Value].BackName = message;
+            }
+            AlgorithmSteps[counter.Value].IsFrozen = false;
+        });
+        await Task.Delay(10);
     }
 
-
-    private async Task RobotMoveTo(RobotService.GotoPositionType position)
+    private async void AwaitPadTimerCallback(object? state)
     {
-        ArgumentNullException.ThrowIfNull(RobotDevice, nameof(RobotDevice));
-
-        dispatcherQueue.TryEnqueue(() => { AliveStep($"Moving to\n{position}\nPosition..."); });
-        RobotDevice.SetRegister(localSettingsService.RobotInPositionRegister, false);
-        RobotDevice.SetRegister(localSettingsService.RobotGotoPositionRegister, (int)position);
-        robotTimer.Change(0, robotTimerPeriod);
-        await Task.CompletedTask;
+        awaitPadTimer.Change(Timeout.Infinite, 0);
+        await DeadStep();
     }
 
-    private bool isRobotTimerOn = false;
-    private void CheckRobotPosition(object? state)
+    private async Task ChargeFabric(string? _)
     {
-        ArgumentNullException.ThrowIfNull(RobotDevice, nameof(RobotDevice));
+        await AliveStep();
+        await AllDevices.PadDevice.StartCycle(CurrentTest.IsPlusPolarity);
+    }
 
+    private async void CheckRobotPosition(object? _)
+    {
         if (!isRobotTimerOn)
         {
             isRobotTimerOn = true;
-            // TODO: Remove robotSimulation
-            if (robotSimulation || RobotDevice.GetFlagRegister(localSettingsService.RobotInPositionRegister))
+            if (await AllDevices.RobotDevice.GetFlagRegisterAsync(localSettingsService.RobotInPositionRegister))
             {
                 robotTimer.Change(Timeout.Infinite, 0);
-                dispatcherQueue.TryEnqueue(() =>
-                {
-                    DeadStep("Done !");
-                    CurrentStep++;
-                });
+                await DeadStep();
             }
             else
             {
-                var xyzwprPosition = RobotDevice.CurrentPosition;
+                var xyzwprPosition = AllDevices.RobotDevice.CurrentPosition;
                 if (xyzwprPosition.IsValid)
                 {
-                    dispatcherQueue?.TryEnqueue(() => { AliveStep($"Position:\nx: {xyzwprPosition.X}\ny: {xyzwprPosition.Y}\nz: {xyzwprPosition.Z}"); });
+                    await AliveStep($"Position:\nx: {xyzwprPosition.X}\ny: {xyzwprPosition.Y}\nz: {xyzwprPosition.Z}");
                 }
             }
             isRobotTimerOn = false;
         }
     }
 
-    private async Task<string> TakeAPhoto(string description, string photoName = "photo")
+    private async Task DeadStep(string? message = null, int? counter = null)
     {
-        ArgumentNullException.ThrowIfNull(CameraDevice, nameof(CameraDevice));
-        ArgumentNullException.ThrowIfNull(TestObject, nameof(TestObject));
-
-        dispatcherQueue.TryEnqueue(() => { AliveStep("Taking\nPhoto..."); });
-        var (fileName, fullPathWithFileName) = await CameraDevice.CapturePhoto(photoName);
-        if (fileName is not null)
-        {
-            TestObject.Photos.Add(new Photo() { FileName = fileName, FullPathFileName = fullPathWithFileName, Description = description });
-            dispatcherQueue?.TryEnqueue(() =>
-            {
-                Steps[CurrentStep].ImageSource = fullPathWithFileName;
-                DeadStep(string.Empty);
-                CurrentStep++;
-            });
-        }
-        await Task.CompletedTask;
-        return fileName ?? string.Empty;
-    }
-
-    private async Task GetWeight(string description)
-    {
-        ArgumentNullException.ThrowIfNull(ScaleDevice, nameof(ScaleDevice));
-        ArgumentNullException.ThrowIfNull(TestObject, nameof(TestObject));
-
-        dispatcherQueue.TryEnqueue(() => { AliveStep("Reading\nWeight..."); });
-        var weight = ScaleDevice.Weight;
-        if (weight is not null)
-        {
-            TestObject.Weights.Add(new Weight() { Value = weight.Value, Description = description });
-            dispatcherQueue.TryEnqueue(() => { DeadStep($"{weight}g"); CurrentStep++; });
-        }
-
-        await Task.CompletedTask;
-    }
-
-    private void AwaitPadTimerCallback(object? state)
-    {
-        ArgumentNullException.ThrowIfNull(PadDevice, nameof(PadDevice));
-
-        awaitPadTimer.Change(Timeout.Infinite, 0);
         dispatcherQueue.TryEnqueue(() =>
         {
-            DeadStep("Done !");
-            CurrentStep++;
-            PadDevice.Paused = true;
+            // Marks a step as completed and updates its UI representation
+            counter ??= CurrentStep;
+            AlgorithmSteps[counter.Value].FlipSlow();
+            AlgorithmSteps[counter.Value].BackName = message ?? $"{AlgorithmSteps[counter.Value].BackName.Replace("...",".")}\nDone!";
+            if (CurrentStep < AlgorithmSteps.Count - 1)
+            {
+                CurrentStep++;
+            }
         });
+        await Task.CompletedTask;
     }
 
-    public void Dispose()
+    
+
+    private async Task Finish(string? _)
     {
-        Steps?.Stop();
-        robotTimer?.Dispose();
-        awaitPadTimer?.Dispose();
-        GC.SuppressFinalize(this);
+        await AliveStep();
+        CurrentTest.Voltages = new List<Voltage>(AllDevices.PadDevice.Voltages);
+        IsRunning = false;
+        await DeadStep();
+        AllDevices.PadDevice.PropertyChanged -= PadDevice_PropertyChanged;
     }
-    #endregion
+
+    private async Task GetHumidity(string? _)
+    {
+        await AliveStep();
+        CurrentTest.Humidities.Add(new Humidity() { Value = AllDevices.HumidityDevice.Humidity });
+        await DeadStep($"{AllDevices.HumidityDevice.Humidity,2}%");
+    }
+
+    private async Task GetPhoto(string? obj)
+    {
+        await AliveStep();
+
+        var (fileName, fullPath) = await AllDevices.CameraDevice.CapturePhoto($"{CurrentTest.Id:D5}_{obj?.Replace(" ", "_")}");
+        CurrentTest.Photos.Add(
+            new Photo
+            {
+                FileName = fileName,
+                FullPath = fullPath,
+                Description = obj ?? string.Empty
+            });
+        dispatcherQueue?.TryEnqueue(() =>
+        {
+            AlgorithmSteps[CurrentStep].ImageSource = fullPath;
+        });
+        await DeadStep(string.Empty);
+    }
+
+    private async Task GetTemperature(string? _)
+    {
+        await AliveStep();
+        CurrentTest.Temperatures.Add(new Temperature() { Value = AllDevices.TemperatureDevice.Temperature });
+        await DeadStep($"{AllDevices.TemperatureDevice.Temperature,2}°C");
+    }
+
+    private async Task GetWeight(string? obj)
+    {
+        await AliveStep();
+        var weight = AllDevices.ScaleDevice.Weight;
+        if (weight is not null)
+        {
+            CurrentTest.Weights.Add(new Weight { Value = weight.Value, Description = obj ?? string.Empty });
+        }
+        await DeadStep($"{weight}g");
+    }
+
+    private async Task LoadFabric(string? _)
+    {
+        await AliveStep();
+    }
+
+    private async Task Wait(string? _)
+    {
+        if (int.TryParse(_, out var duration) && duration > 0)
+        {
+            await AliveStep($"{duration/1000:F1}s.");
+            awaitPadTimer.Change(duration, 0);
+        }
+        else
+        {
+            throw new ArgumentException("Invalid parameters in function ObserveFabric()");
+        }
+    }
+
+    private async Task ReleaseFabric(string? _)
+    {
+        await AliveStep();
+        await AllDevices.PadDevice.StopCycle(true);
+        await DeadStep();
+    }
+
+    private async Task RobotCommand(int position, bool touchSkip)
+    {
+        await AllDevices.RobotDevice.SetRegisterAsync(localSettingsService.RobotIsTouchSkipRegister, touchSkip);
+        await AllDevices.RobotDevice.SetRegisterAsync(localSettingsService.RobotGotoPositionRegister, position);
+        await AllDevices.RobotDevice.SetRegisterAsync(localSettingsService.RobotInPositionRegister, false);
+        robotTimer.Change(0, robotTimerPeriod);
+    }
+
+    private async Task RobotMoveTo(string? obj)
+    {
+        if (!int.TryParse(obj, out var position))
+        {
+            throw new ArgumentException("Invalid parameters in function RobotMoveTo()");
+        }
+        await AliveStep($"Moving to\n{position}...");
+        await RobotCommand(position, false);
+    }
+
+    private async Task RobotTouchSkip(string? obj)
+    {
+        if (!int.TryParse(obj, out var position))
+        {
+            throw new ArgumentException("Invalid parameters in function RobotTouchSkip()");
+        }
+
+        await AliveStep($"Touching\nSkip to:\n{position}...");
+        await RobotCommand(position, true);
+    }
+
+    private async Task Start(object? _)
+    {
+        AlgorithmSteps.ToList().ForEach(step => step.Reset());
+        await Task.Delay(10);
+        // Prepare PAD
+        await AliveStep();
+        await AllDevices.PadDevice.Setup(new List<(int Number, int Value)>
+        {
+            (1, Parameters!.HighVoltagePhase1),
+            (2, Parameters.HighVoltagePhase3),
+            (4, Parameters.DurationPhase1 / 100),
+            (5, Parameters.DurationPhase2 / 100),
+            (6, Parameters.DurationPhase3 / 100),
+            (8, Parameters.AutoRegulationHV ? 1 : 0)
+        });
+
+        // Prepare DB
+        CurrentTest.Date = DateTime.Now;
+        CurrentTest.HVPhaseCharging = Parameters.HighVoltagePhase1;
+        CurrentTest.HVPhaseLoading = Parameters.HighVoltagePhase3;
+        CurrentTest.DurationPhaseCharging = Parameters.DurationPhase1;
+        CurrentTest.DurationPhaseIntermediary = Parameters.DurationPhase2;
+        CurrentTest.DurationPhaseLoading = Parameters.DurationPhase3;
+        CurrentTest.DurationPhaseObserving = Parameters.DurationObserving;
+        CurrentTest.LoadForce = Parameters.LoadForce;
+        CurrentTest.AutoRegulation = Parameters.AutoRegulationHV;
+        CurrentTest.IsPlusPolarity = !(((Parameters.Counter - 1) / Parameters.ChangePolarityStep % 2 == 0) ^
+                                      Parameters.IsStartPlusPolarity);
+
+        // Prepare Robot
+        await AllDevices.RobotDevice.SetRegisterAsync(localSettingsService.RobotLoadForceRegister, Parameters.LoadForce);
+        await AllDevices.RobotDevice.SetRegisterAsync(localSettingsService.RobotGotoPositionRegister, 0);
+        await DeadStep();
+    }
+
+    #endregion Process Cycle
 }

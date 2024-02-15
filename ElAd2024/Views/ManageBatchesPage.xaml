@@ -4,8 +4,6 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-	xmlns:local="using:ElAd2024.Views"
-    xmlns:models="using:ElAd2024.Models"
     xmlns:telerikDataVisualization="using:Telerik.UI.Xaml.Controls.DataVisualization"
 	xmlns:telerikControls="using:Telerik.UI.Xaml.Controls"
     xmlns:telerikChart="using:Telerik.UI.Xaml.Controls.Chart"
@@ -38,7 +36,7 @@
         <telerikGrid:RadDataGrid Margin="0 20 0 0"
     x:Name="dataGrid"
     AutoGenerateColumns="False"
-    ItemsSource="{x:Bind ViewModel.Batches, Mode=TwoWay}"
+    ItemsSource="{x:Bind ViewModel.Items, Mode=TwoWay}"
     IsEnabled="{x:Bind ViewModel.Exists, Mode=OneWay}"
     UserEditMode ="Inline"
             IndentWidth="50"
@@ -53,7 +51,7 @@
                 <telerikGrid:DataGridTextColumn PropertyName="FabricType" Header="Fabric" />
                 <telerikGrid:DataGridTextColumn PropertyName="FabricComposition" Header="Composition"/>
                 <telerikGrid:DataGridTextColumn PropertyName="FabricColor" Header="Color"/>
-                <telerikGrid:DataGridNumericalColumn PropertyName="FabricGSM" Header="Gramature"/>
+                <telerikGrid:DataGridNumericalColumn PropertyName="FabricGSM" Header="GMS"/>
             </telerikGrid:RadDataGrid.Columns>
         </telerikGrid:RadDataGrid>
     </StackPanel>

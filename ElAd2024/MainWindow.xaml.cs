@@ -1,5 +1,4 @@
-﻿using ElAd2024.Helpers;
-
+﻿using ElAd2024.Helpers.General;
 using Windows.UI.ViewManagement;
 
 namespace ElAd2024;

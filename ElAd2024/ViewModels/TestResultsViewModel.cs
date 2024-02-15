@@ -1,42 +1,18 @@
 ﻿using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using ElAd2024.Contracts.Services;
-using ElAd2024.Models;
+using ElAd2024.Models.Database;
 using Microsoft.EntityFrameworkCore;
 
 namespace ElAd2024.ViewModels;
 
-public partial class TestResultsViewModel : ObservableRecipient
+public partial class TestResultsViewModel(IDatabaseService databaseService) : ObservableRecipient
 {
     [ObservableProperty] private Batch? selected;
-
     [ObservableProperty] private Test? selectedTest;
 
-
-    partial void OnSelectedChanged(Batch? value) 
-    {
-    }
-    public ObservableCollection<Batch> Batches
-    {
-        get; set;
-    }
-
-    public ObservableCollection<Batch> ChartSeries
-    {
-        get; set;
-    } = new();
-
-
-    // Dependency Injections
-    private readonly IDatabaseService db;
-    private readonly ILocalSettingsService localSettingsService;
-
-    public TestResultsViewModel(ILocalSettingsService localSettingsService, IDatabaseService databaseService)
-    {
-        db = databaseService;
-
-        this.localSettingsService = localSettingsService;
-        Batches = new ObservableCollection<Batch>(db
+    public ObservableCollection<Batch> Batches => new(
+        databaseService
             .Batches
             .Include(batch => batch.Tests)
             .ThenInclude(test => test.Photos)
@@ -44,8 +20,5 @@ public partial class TestResultsViewModel : ObservableRecipient
             .ThenInclude(test => test.Voltages)
             .Include(batch => batch.Tests)
             .ThenInclude(test => test.Weights)
-
             );
-    }
-
 }

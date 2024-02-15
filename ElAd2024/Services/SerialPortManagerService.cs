@@ -1,32 +1,32 @@
-﻿using Windows.Devices.Enumeration;
+﻿using System.Diagnostics;
+using Windows.Devices.Enumeration;
 using Windows.Devices.SerialCommunication;
-using System.Text;
-using System.Diagnostics;
-using ElAd2024.Models;
 using Windows.Storage.Streams;
-using System.IO.Ports;
-using System.Xml.Linq;
-using Windows.Networking;
-using ElAd2024.ExtentionMethods;
+using CommunityToolkit.Mvvm.ComponentModel;
+using ElAd2024.ExtensionMethods;
+using ElAd2024.Models;
 
 namespace ElAd2024.Services;
-public class SerialPortManagerService
-{
-    private const string newLine = "\r\n";
-    private DataWriter? dataWriter;
-    private DataReader? dataReader;
-    private bool commandSent = false;
-    private CancellationTokenSource? cancellationTokenSource;
 
-    public SerialPortInfo? PortInfo
-    {
-        get; set;
-    }
-    public SerialDevice? Device
-    {
-        get; set;
-    }
+public partial class SerialPortManagerService : ObservableObject, IDisposable
+{
+    public delegate void SerialDataReceivedEventHandler(string data);
+
+    private const string NewLine = "\r\n";
+    private CancellationTokenSource? cancellationTokenSource;
+    [ObservableProperty] private bool commandSent;
+    private DataReader? dataReader;
+    private DataWriter? dataWriter;
+
+    public SerialPortInfo? PortInfo { get; set; }
+    public SerialDevice? Device { get; set; }
     public uint CountBytes { get; set; } = 1024;
+
+    public void Dispose()
+    {
+        CloseSerialPort();
+        GC.SuppressFinalize(this);
+    }
 
     public static async Task<List<SerialPortInfo>> GetAvailableSerialPortsAsync()
     {
@@ -36,20 +36,21 @@ public class SerialPortManagerService
         foreach (var dev in devices)
         {
             using var serialPort = await SerialDevice.FromIdAsync(dev.Id);
-            if (serialPort is not null)
+            if (serialPort is null)
             {
-                SerialPortInfo newPort = new()
-                {
-                    Id = dev.Id,
-                    Name = dev.Name,
-                    PortName = serialPort.PortName,
-                    PortNumber = byte.Parse(serialPort.PortName.Replace("COM", ""))
-                };
-
-
-                serialPort.CopyTo(newPort);
-                ports.Add(newPort);
+                continue;
             }
+
+            SerialPortInfo newPort = new()
+            {
+                Id = dev.Id,
+                Name = dev.Name,
+                PortName = serialPort.PortName,
+                PortNumber = byte.Parse(serialPort.PortName.Replace("COM", ""))
+            };
+
+            serialPort.CopyTo(newPort);
+            ports.Add(newPort);
         }
         return ports;
     }
@@ -59,21 +60,20 @@ public class SerialPortManagerService
         ArgumentNullException.ThrowIfNull(Device, nameof(Device));
         ArgumentNullException.ThrowIfNull(dataWriter, nameof(dataWriter));
         ArgumentException.ThrowIfNullOrWhiteSpace(data, nameof(data));
-        dataWriter?.WriteString(data + newLine);
+        
+        dataWriter?.WriteString(data + NewLine);
         await dataWriter?.StoreAsync();
-        commandSent = true;
+        CommandSent = true;
     }
 
 
     public async Task OpenSerialPortAsync(SerialPortInfo serialPortInfo)
     {
-        CloseSerialPort(); // Ensure any existing port is closed before opening a new one
-
         ArgumentNullException.ThrowIfNull(serialPortInfo);
 
+        CloseSerialPort(); // Ensure any existing port is closed before opening a new one
         PortInfo = serialPortInfo;
 
-        //TODO: It crashes here!!!
         try
         {
             Device = await SerialDevice.FromIdAsync(PortInfo?.Id);
@@ -101,13 +101,11 @@ public class SerialPortManagerService
         }
     }
 
-    public delegate void SerialDataReceivedEventHandler(string data);
     public event SerialDataReceivedEventHandler? DataReceived;
+
     protected virtual void OnDataReceived(string data)
         => DataReceived?.Invoke(data);
-
-
-
+    
     private async Task StartReadingAsync(SerialDevice? serialDevice, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(serialDevice);
@@ -135,9 +133,11 @@ public class SerialPortManagerService
             Debug.WriteLine("ReadAsync: Exception: " + ex.Message);
             // Handle other exceptions if necessary
         }
-        commandSent = false;
+
+        CommandSent = false;
     }
-    public async void CloseSerialPort()
+
+    public void CloseSerialPort()
     {
         try
         {
@@ -159,8 +159,9 @@ public class SerialPortManagerService
         {
             Debug.WriteLine("CloseSerialPort: dataWriter Exception: " + ex.Message);
         }
+
         dataWriter = null;
-        
+
         try
         {
             dataReader?.DetachStream();
@@ -170,6 +171,7 @@ public class SerialPortManagerService
         {
             Debug.WriteLine("CloseSerialPort: dataReader Exception: " + ex.Message);
         }
+
         dataReader = null;
 
         Device?.Dispose();

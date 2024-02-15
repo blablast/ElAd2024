@@ -1,13 +1,19 @@
 ﻿using System.Diagnostics;
+using CommunityToolkit.Mvvm.ComponentModel;
+using ElAd2024.Models.Database;
 using ElAd2024.ViewModels;
+using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
+using Microsoft.UI.Xaml.Media;
+using Telerik.UI.Xaml.Controls.Navigation;
 using Telerik.UI.Xaml.Controls.Primitives;
 
 
 namespace ElAd2024.Views;
 
+[ObservableObject]
 public sealed partial class TestResultsPage : Page
 {
     private RadSideDrawer radSideDrawer = new();
@@ -23,7 +29,7 @@ public sealed partial class TestResultsPage : Page
 
         Loaded += OnLoaded;
         Unloaded += OnUnloaded;
-        
+
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)
@@ -50,13 +56,11 @@ public sealed partial class TestResultsPage : Page
             PopupImage.Source = imageElement.Source;
             StandardPopup.Width = MainContent.ActualWidth;
             StandardPopup.Height = MainContent.ActualHeight;
-            if (!StandardPopup.IsOpen) 
+            if (!StandardPopup.IsOpen)
             {
-                StandardPopup.IsOpen = true; 
-            
+                StandardPopup.IsOpen = true;
+
             }
-            //var image = imageElement.Source as BitmapImage;
-            //await CustomContentDialog.ShowImageAsync(XamlRoot, image);
         }
     }
 

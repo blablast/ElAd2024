@@ -4,13 +4,12 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:helpers="using:ElAd2024.Helpers"
     xmlns:models="using:ElAd2024.Models"
     xmlns:xaml="using:Microsoft.UI.Xaml"
     xmlns:converters="using:ElAd2024.Converters"
     mc:Ignorable="d">
     <Page.Resources>
-        <helpers:EnumToBooleanConverter x:Key="EnumToBooleanConverter" />
+        <converters:EnumToBooleanConverter x:Key="EnumToBooleanConverter" />
         <converters:StringToUintConverter x:Key="StringToUintConverter"/>
         <converters:StringToUshortConverter x:Key="StringToUshortConverter"/>
         <converters:StringToSerialHandshakeConverter x:Key="StringToSerialHandshakeConverter"/>
@@ -50,134 +49,137 @@
             <Setter Property="LargeChange" Value="10"/>
             <Setter Property="Minimum" Value="1"/>
             <Setter Property="Maximum" Value="200"/>
-            <Setter Property="Width" Value="200"/>
+            <Setter Property="Width" Value="164"/>
             <Setter Property="VerticalAlignment" Value="Top"/>
             <Setter Property="Margin" Value="{StaticResource SmallLeftRightMargin}"/>
         </Style>
 
         <!-- DataTemplate for device settings -->
         <DataTemplate x:Key="DeviceSettingsTemplate" x:DataType="models:SerialPortInfo">
-            <StackPanel Width="350">
-                <!-- Baud Rate -->
-                <TextBlock Text="Baud Rate:" Margin="0,5,0,0"/>
-                <ComboBox SelectedValue="{x:Bind BaudRate, Mode=TwoWay, Converter={StaticResource StringToUintConverter}}" Style="{StaticResource SettingsComboBoxStyle}">
-                    <x:String>9600</x:String>
-                    <x:String>19200</x:String>
-                    <x:String>38400</x:String>
-                    <x:String>57600</x:String>
-                    <x:String>115200</x:String>
-                    <x:String>230400</x:String>
-                    <x:String>460800</x:String>
-                    <x:String>921600</x:String>
-                </ComboBox>
+                <Grid HorizontalAlignment="Stretch">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="20"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
 
-                <!-- States -->
-                <CheckBox Content="Break Signal State"  IsChecked="{x:Bind BreakSignalState, Mode=TwoWay}" Style="{StaticResource SettingsCheckBoxStyle}"/>
+                    <ComboBox Grid.Row="0" Grid.Column="0" Header="Baud Rate:"  SelectedValue="{x:Bind BaudRate, Mode=TwoWay, Converter={StaticResource StringToUintConverter}}" Style="{StaticResource SettingsComboBoxStyle}">
+                        <x:String>9600</x:String>
+                        <x:String>19200</x:String>
+                        <x:String>38400</x:String>
+                        <x:String>57600</x:String>
+                        <x:String>115200</x:String>
+                        <x:String>230400</x:String>
+                        <x:String>460800</x:String>
+                        <x:String>921600</x:String>
+                    </ComboBox>
+                    <CheckBox Grid.Row="0" Grid.Column="2" Content="Break Signal State"  IsChecked="{x:Bind BreakSignalState, Mode=TwoWay}" Style="{StaticResource SettingsCheckBoxStyle}"/>
 
-                <!-- Data Bits -->
-                <TextBlock Text="Data Bits:" Margin="0,5,0,0"/>
-                <ComboBox SelectedValue="{x:Bind DataBits, Mode=TwoWay, Converter={StaticResource StringToUshortConverter}}" Style="{StaticResource SettingsComboBoxStyle}">
-                    <x:String>7</x:String>
-                    <x:String>8</x:String>
-                </ComboBox>
+                    
+                    <ComboBox Grid.Row="1" Grid.Column="0" Header="Data Bits:" SelectedValue="{x:Bind DataBits, Mode=TwoWay, Converter={StaticResource StringToUshortConverter}}" Style="{StaticResource SettingsComboBoxStyle}">
+                        <x:String>7</x:String>
+                        <x:String>8</x:String>
+                    </ComboBox>
+                    <ComboBox Grid.Row="1" Grid.Column="2" Header="Handshake:" SelectedValue="{x:Bind Handshake, Mode=TwoWay, Converter={StaticResource StringToSerialHandshakeConverter}}" Style="{StaticResource SettingsComboBoxStyle}">
+                        <x:String>None</x:String>
+                        <x:String>RequestToSend</x:String>
+                        <x:String>RequestToSendXOnXOff</x:String>
+                        <x:String>XOnXOff</x:String>
+                    </ComboBox>
+ 
+                    <ComboBox Grid.Row="2" Grid.Column="0" Header="Parity:" SelectedValue="{x:Bind Parity, Mode=TwoWay, Converter={StaticResource StringToSerialParityConverter}}" Style="{StaticResource SettingsComboBoxStyle}">
+                        <x:String>None</x:String>
+                        <x:String>Odd</x:String>
+                        <x:String>Even</x:String>
+                        <x:String>Mark</x:String>
+                        <x:String>Space</x:String>
+                    </ComboBox>
+                    <ComboBox Grid.Row="2" Grid.Column="2" Header="Stop Bits:"  SelectedValue="{x:Bind StopBits, Mode=TwoWay, Converter={StaticResource StringToSerialStopBitCountConverter}}" Style="{StaticResource SettingsComboBoxStyle}">
+                        <x:String>One</x:String>
+                        <x:String>OnePointFive</x:String>
+                        <x:String>Two</x:String>
+                    </ComboBox>
 
-                <!-- Handshake -->
-                <TextBlock Text="Handshake:" Margin="0,5,0,0"/>
-                <ComboBox SelectedValue="{x:Bind Handshake, Mode=TwoWay, Converter={StaticResource StringToSerialHandshakeConverter}}" Style="{StaticResource SettingsComboBoxStyle}">
-                    <x:String>None</x:String>
-                    <x:String>RequestToSend</x:String>
-                    <x:String>RequestToSendXOnXOff</x:String>
-                    <x:String>XOnXOff</x:String>
-                </ComboBox>
+                    <NumberBox Grid.Row="3" Grid.Column="0" 
+                        Header="Read Timeout:"
+                        Value="{x:Bind ReadTimeout, Mode=TwoWay, Converter={StaticResource DoubleToTimeSpanFromMillisecondsConverter}}"   Style="{StaticResource SettingsNumberBoxStyle}"/>
+                    <NumberBox Grid.Row="3" Grid.Column="2" 
+                        Header="Write Timeout:"
+                        Value="{x:Bind WriteTimeout, Mode=TwoWay, Converter={StaticResource DoubleToTimeSpanFromMillisecondsConverter}}"  Style="{StaticResource SettingsNumberBoxStyle}" />
 
-                <CheckBox Content="Is Data Terminal Ready Enabled"  IsChecked="{x:Bind IsDataTerminalReadyEnabled, Mode=TwoWay}" Style="{StaticResource SettingsCheckBoxStyle}"/>
-                <CheckBox Content="Is Request To Send Enabled"  IsChecked="{x:Bind IsRequestToSendEnabled, Mode=TwoWay}" Style="{StaticResource SettingsCheckBoxStyle}"/>
+                    <CheckBox Grid.Row="4" Grid.Column="0" Content="DTR Enabled"  IsChecked="{x:Bind IsDataTerminalReadyEnabled, Mode=TwoWay}" Style="{StaticResource SettingsCheckBoxStyle}"/>
+                    <CheckBox Grid.Row="4" Grid.Column="2" Content="RTS Enabled"  IsChecked="{x:Bind IsRequestToSendEnabled, Mode=TwoWay}" Style="{StaticResource SettingsCheckBoxStyle}"/>
+                </Grid>
 
-                <!-- Parity -->
-                <TextBlock Text="Parity:" Margin="0,5,0,0"/>
-                <ComboBox SelectedValue="{x:Bind Parity, Mode=TwoWay, Converter={StaticResource StringToSerialParityConverter}}" Style="{StaticResource SettingsComboBoxStyle}">
-                    <x:String>None</x:String>
-                    <x:String>Odd</x:String>
-                    <x:String>Even</x:String>
-                    <x:String>Mark</x:String>
-                    <x:String>Space</x:String>
-                </ComboBox>
-
-                <NumberBox
-                    VerticalAlignment="Top"
-                    Header="Read Timeout:"
-                    Value="{x:Bind ReadTimeout, Mode=TwoWay, Converter={StaticResource DoubleToTimeSpanFromMillisecondsConverter}}"   Style="{StaticResource SettingsNumberBoxStyle}"/>
-
-                <!-- Stop Bits -->
-                <TextBlock Text="Stop Bits:" Margin="0,5,0,0"/>
-                <ComboBox SelectedValue="{x:Bind StopBits, Mode=TwoWay, Converter={StaticResource StringToSerialStopBitCountConverter}}" Style="{StaticResource SettingsComboBoxStyle}">
-                    <x:String>One</x:String>
-                    <x:String>OnePointFive</x:String>
-                    <x:String>Two</x:String>
-                </ComboBox>
-
-                <NumberBox
-                    VerticalAlignment="Top"
-                    Header="Write Timeout:"
-                    Value="{x:Bind WriteTimeout, Mode=TwoWay, Converter={StaticResource DoubleToTimeSpanFromMillisecondsConverter}}"  Style="{StaticResource SettingsNumberBoxStyle}" />
-
-
-
-            </StackPanel>
         </DataTemplate>
 
     </Page.Resources>
     <ScrollView>
-        <StackPanel
-            x:Name="ContentArea" MaxWidth="1150" HorizontalAlignment="Left">
+        <StackPanel x:Name="ContentArea" HorizontalAlignment="Left">
             <TextBlock x:Uid="Settings_About" Style="{ThemeResource SubtitleTextBlockStyle}"/>
-            <StackPanel Margin="{StaticResource XSmallTopMargin}">
+            <StackPanel Margin="{StaticResource XSmallTopMargin}" MaxWidth="1150">
                 <TextBlock Text="{x:Bind ViewModel.VersionDescription, Mode=OneWay}" Style="{ThemeResource BodyTextBlockStyle}" />
-
                 <TextBlock x:Uid="Settings_AboutDescription" Margin="{StaticResource XSmallTopMargin}" Style="{ThemeResource BodyTextBlockStyle}"/>
                 <HyperlinkButton x:Uid="SettingsPage_PrivacyTermsLink" Margin="{StaticResource SettingsPageHyperlinkButtonMargin}" />
             </StackPanel>
+            <CheckBox Content="Simulate missed devices"  IsChecked="{x:Bind ViewModel.LocalSettingsService.Simulate, Mode=TwoWay}" Style="{StaticResource SettingsCheckBoxStyle}"/>
+
             <StackPanel Orientation="Horizontal" Margin="{StaticResource SmallTopBottomMargin}">
                 <TextBox Margin="{StaticResource SmallLeftRightMargin}" Width="200" HorizontalAlignment="Left" Header="Robot IP Address: "
-                       Text="{x:Bind ViewModel.LocalSettingsService.RobotIPAddress, Mode=TwoWay}" Style="{ThemeResource DefaultTextBoxStyle}" />
-                <NumberBox Header="Robot Goto Position Register:"
+                       Text="{x:Bind ViewModel.LocalSettingsService.RobotIpAddress, Mode=TwoWay}" Style="{ThemeResource DefaultTextBoxStyle}" />
+                <NumberBox Header="Goto Position Num Reg:"
                            Value="{x:Bind ViewModel.LocalSettingsService.RobotGotoPositionRegister, Mode=TwoWay}"
-                           Style="{StaticResource RobotRegisterNumberBoxStyle}" />
+                           Style="{StaticResource RobotRegisterNumberBoxStyle}"/>
 
-                <NumberBox Header="Robot In Position Register:"
+                <NumberBox Header="In Position Flag Reg:"
                            Value="{x:Bind ViewModel.LocalSettingsService.RobotInPositionRegister, Mode=TwoWay}"
-                           Style="{StaticResource RobotRegisterNumberBoxStyle}" />
+                           Style="{StaticResource RobotRegisterNumberBoxStyle}"/>
 
-                <NumberBox Header="Robot Load Force Register: "
+                <NumberBox Header="Load Force Num Reg:"
                            Value="{x:Bind  ViewModel.LocalSettingsService.RobotLoadForceRegister, Mode=TwoWay}"
-                           Style="{StaticResource RobotRegisterNumberBoxStyle}" />
+                           Style="{StaticResource RobotRegisterNumberBoxStyle}"/>
+
+                <NumberBox Header="Is TouchSkip Flag Reg:"
+                           Value="{x:Bind  ViewModel.LocalSettingsService.RobotIsTouchSkipRegister, Mode=TwoWay}"
+                           Style="{StaticResource RobotRegisterNumberBoxStyle}"/>
+
+                <NumberBox Header="Run Flag Reg:"
+                           Value="{x:Bind  ViewModel.LocalSettingsService.RobotRunRegister, Mode=TwoWay}"
+                           Style="{StaticResource RobotRegisterNumberBoxStyle}"/>
+
             </StackPanel>
             <StackPanel>
                 <StackPanel Orientation="Horizontal">
-                    <Expander Header="Environmental Sensors" IsExpanded="True" Width="385">
+                    <Expander Header="Environmental Sensors" IsExpanded="True">
                         <StackPanel>
                             <TextBlock Text="Serial Port:" Margin="0,5,0,0"/>
-                            <ComboBox ItemsSource="{x:Bind ViewModel.AvailableSerialPorts, Mode=OneWay}"
+                            <ComboBox ItemsSource="{x:Bind ViewModel.AllDevices.AvailablePortsNames, Mode=OneWay}"
                               SelectedItem="{x:Bind ViewModel.SelectedEnvDevicePort, Mode=TwoWay}"
                                   HorizontalAlignment="Stretch"/>
-
                             <ContentControl Content="{x:Bind ViewModel.LocalSettingsService.EnvDeviceSettings, Mode=OneWay}" ContentTemplate="{StaticResource DeviceSettingsTemplate}"/>
                         </StackPanel>
                     </Expander>
-                    <Expander Header="Scale Device" IsExpanded="True" Width="385">
+                    <Expander Header="Scale Device" IsExpanded="True">
                         <StackPanel>
                             <TextBlock Text="Serial Port:" Margin="0,5,0,0"/>
-                            <ComboBox ItemsSource="{x:Bind ViewModel.AvailableSerialPorts, Mode=OneWay}"
+                            <ComboBox ItemsSource="{x:Bind ViewModel.AllDevices.AvailablePortsNames, Mode=OneWay}"
                               SelectedItem="{x:Bind ViewModel.SelectedScaleDevicePort, Mode=TwoWay}"
                                   HorizontalAlignment="Stretch"/>
 
                             <ContentControl Content="{x:Bind ViewModel.LocalSettingsService.ScaleDeviceSettings, Mode=OneWay}" ContentTemplate="{StaticResource DeviceSettingsTemplate}"/>
                         </StackPanel>
                     </Expander>
-                    <Expander Header="Pad Device" IsExpanded="True" Width="385">
+                    <Expander Header="Pad Device" IsExpanded="True">
                         <StackPanel>
                             <TextBlock Text="Serial Port:" Margin="0,5,0,0"/>
-                            <ComboBox ItemsSource="{x:Bind ViewModel.AvailableSerialPorts, Mode=OneWay}"
+                            <ComboBox ItemsSource="{x:Bind ViewModel.AllDevices.AvailablePortsNames, Mode=OneWay}"
                               SelectedItem="{x:Bind ViewModel.SelectedPadDevicePort, Mode=TwoWay}"
                                   HorizontalAlignment="Stretch"/>
 
@@ -188,7 +190,7 @@
                 <Button Content="Save serial port settings" Margin="{StaticResource XSmallTopMargin}" Command="{x:Bind ViewModel.SaveSettingsCommand}" Style="{StaticResource AccentButtonStyle}" HorizontalAlignment="Right"/>
 
             </StackPanel>
-
+            <Button Content="Reset to default" Margin="{StaticResource XSmallTopMargin}" Command="{x:Bind ViewModel.ResetSettingsCommand}" Style="{StaticResource AccentButtonStyle}" HorizontalAlignment="Left"/>
             <StackPanel Margin="{StaticResource SmallTopBottomMargin}">
                 <TextBlock x:Uid="Settings_Theme" />
                 <StackPanel Margin="{StaticResource XSmallTopMargin}" Orientation="Horizontal">

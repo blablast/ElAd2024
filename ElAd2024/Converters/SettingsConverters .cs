@@ -11,13 +11,18 @@ public class StringToNumericConverter<TNumeric> : IValueConverter where TNumeric
 
     public object? ConvertBack(object value, Type targetType, object parameter, string language)
     {
-        if (value is string stringValue)
+        if (value is not string stringValue)
         {
-            try
-            {
-                return (TNumeric)System.Convert.ChangeType(stringValue, typeof(TNumeric), CultureInfo.InvariantCulture);
-            }
-            catch { }
+            return default;
+        }
+
+        try
+        {
+            return (TNumeric)System.Convert.ChangeType(stringValue, typeof(TNumeric), CultureInfo.InvariantCulture);
+        }
+        catch
+        {
+            // ignored
         }
         return default;
     }

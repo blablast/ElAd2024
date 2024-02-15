@@ -2,44 +2,287 @@
 using System.Diagnostics;
 using CommunityToolkit.Mvvm.ComponentModel;
 using ElAd2024.Contracts.Services;
-using ElAd2024.Models;
+using ElAd2024.Models.Database;
 using Microsoft.EntityFrameworkCore;
-using Windows.UI;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace ElAd2024.Services;
+
 [ObservableObject]
 public partial class DatabaseService : DbContext, IDatabaseService
 {
-    public DbContext Context => this;
-    public string DBPath { get; }
-    [ObservableProperty] private DbSet<Batch>? batches;
-    [ObservableProperty] private DbSet<Test>? tests;
-    [ObservableProperty] private DbSet<Voltage>? voltages;
-    [ObservableProperty] private DbSet<Photo>? photos;
-    public DatabaseService()
-    {
-        DBPath = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ElAd2024.db");
-    }
+    [ObservableProperty] private DbSet<Algorithm>? algorithms;
+    [ObservableProperty] private DbSet<AlgorithmStep>? algorithmSteps;
+    [ObservableProperty] private DbSet<Step>? steps;
 
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    {
-        optionsBuilder
-             .UseSqlite($"DataSource={DBPath}")
-             .EnableSensitiveDataLogging();
-    }
+    [ObservableProperty] private DbSet<Batch>? batches;
+
+    [ObservableProperty] private DbSet<Test>? tests;
+    [ObservableProperty] private DbSet<Photo>? photos;
+    [ObservableProperty] private DbSet<Voltage>? voltages;
+    [ObservableProperty] private DbSet<Weight>? weights;
+    [ObservableProperty] private DbSet<Humidity>? humidities;
+    [ObservableProperty] private DbSet<Temperature>? temperatures;
+    [ObservableProperty] private DbSet<ElectroStatic>? electroStatics;
+
+    public DbContext Context => this;
+
+    public string DbPath { get; } = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ElAd2024.db");
 
     public async Task InitializeAsync()
     {
         try
         {
-            //await Database.EnsureDeletedAsync();
+            await Database.EnsureDeletedAsync();
             await Database.EnsureCreatedAsync();
         }
         catch (Exception ex)
         {
             Debug.WriteLine(ex.Message);
         }
+
         await Task.CompletedTask;
+
+        if (Steps?.ToList().Count == 0)
+        {
+            await InitializeSteps();
+        }
+
+        if (Algorithms?.ToList().Count == 0 && Steps is not null)
+        {
+            await InitializeAlgorithms();
+        }
+    }
+
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) =>
+        optionsBuilder
+            .UseSqlite($"DataSource={DbPath}")
+            .EnableSensitiveDataLogging();
+            //.LogTo(s => Debug.WriteLine(s));
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder) => base.OnModelCreating(modelBuilder);
+    // If needed, configure the Order column here as well
+
+    private async Task InitializeSteps()
+    {
+        Steps?.AddRange(new ObservableCollection<Step>
+            {
+                new() { Name = Step.StepType.Start.ToString(), AsyncActionName = "Start", Style = Step.DeviceType.Computer, IsMoveable = false, IsFirst = true },
+                new() { Name = Step.StepType.Stop.ToString(), AsyncActionName = "Finish", Style = Step.DeviceType.Computer, IsMoveable = false, IsLast = true },
+                new() { Name = Step.StepType.Photo.ToString(), AsyncActionName = "GetPhoto", Style = Step.DeviceType.Computer, HasParameter = true },
+                new() { Name = Step.StepType.Weight.ToString(), AsyncActionName = "GetWeight", Style = Step.DeviceType.Scale, HasParameter = true },
+                new() { Name = Step.StepType.RobotMoveTo.ToString(), AsyncActionName = "RobotMoveTo", Style = Step.DeviceType.Robot, HasParameter = true },
+                new() { Name = Step.StepType.RobotTouchSkip.ToString(), AsyncActionName = "RobotTouchSkip", Style = Step.DeviceType.Robot, HasParameter = true },
+                new() { Name = Step.StepType.Temperature.ToString(), AsyncActionName = "GetTemperature", Style = Step.DeviceType.Environment },
+                new() { Name = Step.StepType.Humidity.ToString(), AsyncActionName = "GetHumidity", Style = Step.DeviceType.Environment },
+                new() { Name = Step.StepType.Static.ToString(), AsyncActionName = "GetStatic", Style = Step.DeviceType.Environment },
+                new() { Name = Step.StepType.Charge.ToString(), AsyncActionName = "ChargeFabric", Style = Step.DeviceType.Pad, IsMoveable = false },
+                new() { Name = Step.StepType.Pick.ToString(), AsyncActionName = "LoadFabric", Style = Step.DeviceType.Pad, IsMoveable = false },
+                new() { Name = Step.StepType.Wait.ToString(), AsyncActionName = "Wait", Style = Step.DeviceType.Computer, HasParameter = true },
+                new() { Name = Step.StepType.Release.ToString(), AsyncActionName = "ReleaseFabric", Style = Step.DeviceType.Pad, IsMoveable = false }
+            });
+        await SaveChangesAsync();
+    }
+    private async Task InitializeAlgorithms()
+    {
+        ArgumentNullException.ThrowIfNull(Algorithms);
+        ArgumentNullException.ThrowIfNull(Steps);
+
+        var dA = new Algorithm { Name = "Default", Description = "Default algorithm", IsBaseAlgorithm = true };
+        Algorithms.Add(dA);
+        await SaveChangesAsync();
+
+        dA.AlgorithmSteps.Add(new AlgorithmStep
+        {
+            Step = Steps.Single(n => n.Name == Step.StepType.Start.ToString()),
+            Order = dA.AlgorithmSteps.Count,
+            FrontName = @"Start",
+            BackName = "Setting up!"
+        });
+
+        dA.AlgorithmSteps.Add(new AlgorithmStep
+        {
+            Step = Steps.Single(n => n.Name == Step.StepType.Temperature.ToString()),
+            Order = dA.AlgorithmSteps.Count,
+            FrontName = @"Temperature",
+            BackName = "Getting temperature!"
+        });
+
+        dA.AlgorithmSteps.Add(new AlgorithmStep
+        {
+            Step = Steps.Single(n => n.Name == Step.StepType.Humidity.ToString()),
+            Order = dA.AlgorithmSteps.Count,
+            FrontName = @"Humidity",
+            BackName = "Getting humidity!"
+        });
+
+        dA.AlgorithmSteps.Add(new AlgorithmStep
+        {
+            Step = Steps.Single(n => n.Name == Step.StepType.RobotMoveTo.ToString()),
+            Order = dA.AlgorithmSteps.Count,
+            FrontName = @"Home",
+            BackName = "Moving Pad!",
+            ActionParameter = "100"
+        });
+
+        dA.AlgorithmSteps.Add(new AlgorithmStep
+        {
+            Step = Steps.Single(n => n.Name == Step.StepType.RobotMoveTo.ToString()),
+            Order = dA.AlgorithmSteps.Count,
+            FrontName = @"PickUp+",
+            BackName = "Moving Pad...",
+            ActionParameter = "12"
+        });
+
+        dA.AlgorithmSteps.Add(new AlgorithmStep
+        {
+            Step = Steps.Single(n => n.Name == Step.StepType.Photo.ToString()),
+            Order = dA.AlgorithmSteps.Count,
+            FrontName = @"Photo",
+            BackName = "Taking photo...",
+            ActionParameter = "Ready to PickUp"
+        });
+
+        dA.AlgorithmSteps.Add(new AlgorithmStep
+        {
+            Step = Steps.Single(n => n.Name == Step.StepType.Weight.ToString()),
+            Order = dA.AlgorithmSteps.Count,
+            FrontName = @"Weight",
+            BackName = "Weighting...",
+            ActionParameter = "StackFull"
+        });
+
+        dA.AlgorithmSteps.Add(new AlgorithmStep
+        {
+            Step = Steps.Single(n => n.Name == Step.StepType.RobotTouchSkip.ToString()),
+            Order = dA.AlgorithmSteps.Count,
+            FrontName = @"PickUp",
+            BackName = "Moving Pad...",
+            ActionParameter = "11"
+        });
+
+        dA.AlgorithmSteps.Add(new AlgorithmStep
+        {
+            Step = Steps.Single(n => n.Name == Step.StepType.Charge.ToString()),
+            Order = dA.AlgorithmSteps.Count,
+            FrontName = @"Charge",
+            BackName = "Charging..."
+        });
+
+        dA.AlgorithmSteps.Add(new AlgorithmStep
+        {
+            Step = Steps.Single(n => n.Name == Step.StepType.Pick.ToString()),
+            Order = dA.AlgorithmSteps.Count,
+            FrontName = @"PickUp",
+            BackName = "Picking up..."
+        });
+
+        dA.AlgorithmSteps.Add(new AlgorithmStep
+        {
+            Step = Steps.Single(n => n.Name == Step.StepType.RobotMoveTo.ToString()),
+            Order = dA.AlgorithmSteps.Count,
+            FrontName = @"PickUp+",
+            BackName = "Moving Pad...",
+            ActionParameter = "12"
+        });
+
+        dA.AlgorithmSteps.Add(new AlgorithmStep
+        {
+            Step = Steps.Single(n => n.Name == Step.StepType.Weight.ToString()),
+            Order = dA.AlgorithmSteps.Count,
+            FrontName = @"Weight",
+            BackName = "Weighting...",
+            ActionParameter = "StackPicked"
+        });
+
+        dA.AlgorithmSteps.Add(new AlgorithmStep
+        {
+            Step = Steps.Single(n => n.Name == Step.StepType.RobotMoveTo.ToString()),
+            Order = dA.AlgorithmSteps.Count,
+            FrontName = @"Observe",
+            BackName = "Moving Pad...",
+            ActionParameter = "100"
+        });
+
+        dA.AlgorithmSteps.Add(new AlgorithmStep
+        {
+            Step = Steps.Single(n => n.Name == Step.StepType.Photo.ToString()),
+            Order = dA.AlgorithmSteps.Count,
+            FrontName = @"Photo",
+            BackName = "Taking photo...",
+            ActionParameter = "Picked"
+        });
+
+        dA.AlgorithmSteps.Add(new AlgorithmStep
+        {
+            Step = Steps.Single(n => n.Name == Step.StepType.Wait.ToString()),
+            Order = dA.AlgorithmSteps.Count,
+            FrontName = @"Wait",
+            BackName = "Waiting...",
+            ActionParameter = "3000"
+        });
+
+        dA.AlgorithmSteps.Add(new AlgorithmStep
+        {
+            Step = Steps.Single(n => n.Name == Step.StepType.Weight.ToString()),
+            Order = dA.AlgorithmSteps.Count,
+            FrontName = @"Weight",
+            BackName = "Moving Pad...",
+            ActionParameter = "AfterTime"
+        });
+
+        dA.AlgorithmSteps.Add(new AlgorithmStep
+        {
+            Step = Steps.Single(n => n.Name == Step.StepType.RobotMoveTo.ToString()),
+            Order = dA.AlgorithmSteps.Count,
+            FrontName = @"Unload+",
+            BackName = "Moving Pad...",
+            ActionParameter = "22"
+        });
+
+        dA.AlgorithmSteps.Add(new AlgorithmStep
+        {
+            Step = Steps.Single(n => n.Name == Step.StepType.RobotTouchSkip.ToString()),
+            Order = dA.AlgorithmSteps.Count,
+            FrontName = @"Unload",
+            BackName = "Moving Pad...",
+            ActionParameter = "21"
+        });
+
+        dA.AlgorithmSteps.Add(new AlgorithmStep
+        {
+            Step = Steps.Single(n => n.Name == Step.StepType.Release.ToString()),
+            Order = dA.AlgorithmSteps.Count,
+            FrontName = @"Release",
+            BackName = "Releasing up\nfabric..."
+        });
+
+        dA.AlgorithmSteps.Add(new AlgorithmStep
+        {
+            Step = Steps.Single(n => n.Name == Step.StepType.RobotMoveTo.ToString()),
+            Order = dA.AlgorithmSteps.Count,
+            FrontName = @"Unload+",
+            BackName = "Moving Pad...",
+            ActionParameter = "22"
+        });
+
+        dA.AlgorithmSteps.Add(new AlgorithmStep
+        {
+            Step = Steps.Single(n => n.Name == Step.StepType.RobotMoveTo.ToString()),
+            Order = dA.AlgorithmSteps.Count,
+            FrontName = @"Home",
+            BackName = "Moving Pad...",
+            ActionParameter = "100"
+        });
+
+        dA.AlgorithmSteps.Add(new AlgorithmStep
+        {
+            Step = Steps.Single(n => n.Name == Step.StepType.Stop.ToString()),
+            Order = dA.AlgorithmSteps.Count,
+            FrontName = @"Finish",
+            BackName = "Finishing..."
+        }
+        );
+
+        await SaveChangesAsync();
     }
 }

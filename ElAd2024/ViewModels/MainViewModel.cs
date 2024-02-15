@@ -1,193 +1,220 @@
-﻿using System;
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Diagnostics.Metrics;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using ElAd2024.Contracts.Devices;
 using ElAd2024.Contracts.Services;
-using ElAd2024.Converters;
-using ElAd2024.Helpers;
+using ElAd2024.Devices;
+using ElAd2024.Devices.Serial;
+using ElAd2024.Devices.Simulator;
 using ElAd2024.Models;
+using ElAd2024.Models.Database;
 using ElAd2024.Services;
 using ElAd2024.Views;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
-using Telerik.Barcode;
-using Telerik.UI.Xaml.Controls.DataVisualization;
 
 namespace ElAd2024.ViewModels;
 
 public partial class MainViewModel : ObservableRecipient, IDisposable
 {
-    [ObservableProperty] private ProceedTestService proceedTest;
+    #region Fields
+    // Dependency Injections
+    private readonly IDatabaseService db;
+    private readonly ILocalSettingsService localSettingsService;
 
-    [ObservableProperty] private TestParameters parameters = new();
-    [ObservableProperty] private bool isSelected = false;
+    private XamlRoot? xamlRoot;
+    private readonly DispatcherQueue? dispatcherQueue;
+    private readonly Timer scaleTimer;
+    private Test testInProgress = new();
+
+    #endregion
+
+    #region Properties
+
     [ObservableProperty] private Batch? selected;
     partial void OnSelectedChanged(Batch? oldValue, Batch? newValue)
     {
         IsSelected = newValue is not null;
         SelectedFullName =
-            (newValue == null)
-            ? string.Empty
-            : $"{newValue.Name}, Fabric: {newValue.FabricType}{newValue.FabricGSM}g, {newValue.FabricComposition}, {newValue.FabricColor}";
+            newValue == null
+                ? string.Empty
+                : $"{newValue.Name}, Fabric: {newValue.FabricType}{newValue.FabricGSM}g, {newValue.FabricComposition}, {newValue.FabricColor}";
+        SelectedAlgorithm = Algorithms.FirstOrDefault() ?? new Algorithm();
     }
 
+    [ObservableProperty] private string selectedFullName = "<Select a batch>";
+    [ObservableProperty] private bool isSelected;
+    [ObservableProperty] private bool isTesting;
 
-    [ObservableProperty] private string? selectedFullName = "<Select a batch>";
-    public ObservableCollection<Batch> Batches
+    [ObservableProperty] private TestParameters parameters = new();
+    [ObservableProperty] private ProceedTestService proceedTest;
+    [ObservableProperty] private IAllDevices allDevices;
+    public ObservableCollection<Algorithm> Algorithms { get; set; }
+    [ObservableProperty] private Algorithm? selectedAlgorithm;
+
+    async partial void OnSelectedAlgorithmChanged(Algorithm? value)
     {
-        get; set;
+        if (value is not null)
+        {
+            await ProceedTest.InitializeStepsAsync(value.Id);
+        }
     }
-
-    [ObservableProperty] private bool isTesting = false;
-
-    private Test testInProgress = new();
-
-    private XamlRoot? xamlRoot;
-
+    
+    public ObservableCollection<Batch> Batches { get; set; }
 
     // Devices
-    public ObservableCollection<SerialPortInfo> AvailablePorts { get; private set; } = [];
+    public ObservableCollection<SerialPortInfo> AvailablePorts { get; } = [];
 
-    //private byte envCountDataReceived = 0;
-    [ObservableProperty] private EnvDataViewModel envDevice;
-    [ObservableProperty] private PadDataViewModel padDevice;
-    [ObservableProperty] private ScaleDataViewModel scaleDevice;
-    [ObservableProperty] private CameraService cameraDevice;
-    [ObservableProperty] private RobotService? robotDevice;
+    #endregion Properties
 
-    // Dependency Injections
-    private readonly IDatabaseService db;
-    private readonly ILocalSettingsService localSettingsService;
-
-    private readonly Timer scaleTimer;
-
-    private readonly DispatcherQueue? dispatcherQueue;
+    #region Dispose
+    public void Dispose()
+    {
+        if (ProceedTest is not null)
+        {
+            ProceedTest.PropertyChanged -= ProceedTest_PropertyChanged;
+            ProceedTest.Dispose();
+        }
+        scaleTimer?.Dispose();
+        GC.SuppressFinalize(this);
+    }
+    #endregion
 
     #region Initialization
 
-#pragma warning disable CS8618 // Pole niedopuszczające wartości null musi zawierać wartość inną niż null podczas kończenia działania konstruktora. Rozważ zadeklarowanie pola jako dopuszczającego wartość null.
-    public MainViewModel(ILocalSettingsService localSettingsService, IDatabaseService databaseService)
-#pragma warning restore CS8618 // Pole niedopuszczające wartości null musi zawierać wartość inną niż null podczas kończenia działania konstruktora. Rozważ zadeklarowanie pola jako dopuszczającego wartość null.
+    public MainViewModel(ILocalSettingsService localSettingsService, IDatabaseService databaseService, IAllDevices allDevices)
     {
-        dispatcherQueue = DispatcherQueue.GetForCurrentThread();
-        db = databaseService;
-
+        AllDevices = allDevices;
         this.localSettingsService = localSettingsService;
+        db = databaseService;
+        dispatcherQueue = DispatcherQueue.GetForCurrentThread();
+
+        Parameters = localSettingsService.Parameters;
+        Parameters.Counter = 0;
+
         Batches = new ObservableCollection<Batch>(db
             .Batches
             .Include(batch => batch.Tests)
             .ThenInclude(test => test.Photos)
             .Include(batch => batch.Tests)
             .ThenInclude(test => test.Photos)
-            );
-        CameraDevice = new();
-        ProceedTest = new(localSettingsService);
+        );
+        Algorithms = new ObservableCollection<Algorithm>(db.Algorithms!);
+
+        ProceedTest = App.GetService<ProceedTestService>();
+        ProceedTest.PropertyChanged += ProceedTest_PropertyChanged;
+
         scaleTimer = new Timer(ScaleTimerCallback, null, Timeout.Infinite, 0);
     }
+
     private void ScaleTimerCallback(object? state)
-        => dispatcherQueue?.TryEnqueue(async () => { await ScaleDevice.GetWeight(); });
+        => dispatcherQueue?.TryEnqueue(async () =>
+        {
+            await AllDevices.ScaleDevice.GetWeight();
+        });
 
     public async Task InitializeAsync(XamlRoot xamlRoot)
     {
         this.xamlRoot = xamlRoot;
 
-        (await SerialPortManagerService.GetAvailableSerialPortsAsync()).ForEach(port => AvailablePorts.Add(port));
+        //(await SerialPortManagerService.GetAvailableSerialPortsAsync()).ForEach(port => AvailablePorts.Add(port));
 
-        EnvDevice = new(LoadSPI(localSettingsService.EnvDeviceSettings));
-        if (EnvDevice is not null) { await EnvDevice.ConnectAsync(); }
+        //await AllDevices.TemperatureDevice.ConnectAsync(LoadSpi(localSettingsService.EnvDeviceSettings));
+        //if(AllDevices.TemperatureDevice.IsConnected && localSettingsService.Simulate)
+        //{
+        //    AllDevices.HumidityDevice = (HumidityAndTemperatureDevice)AllDevices.TemperatureDevice;
+        //}
+        //else if(localSettingsService.Simulate)
+        //{
+        //    AllDevices.TemperatureDevice = new HumidityAndTemperatureSimulator();
+        //    await AllDevices.TemperatureDevice.ConnectAsync();
+        //    AllDevices.HumidityDevice = (HumidityAndTemperatureSimulator)AllDevices.TemperatureDevice;
+        //}
 
-        ScaleDevice = new(LoadSPI(localSettingsService.ScaleDeviceSettings));
-        if (ScaleDevice is not null)
-        {
-            await ScaleDevice.ConnectAsync();
-            scaleTimer.Change(0, 100);
-        }
+        //await AllDevices.ScaleDevice.ConnectAsync(LoadSpi(localSettingsService.ScaleDeviceSettings));
+        //scaleTimer.Change(0, 100);
+        //if (!AllDevices.ScaleDevice.IsConnected && localSettingsService.Simulate)
+        //{
+        //    AllDevices.ScaleDevice = new ScaleSimulator();
+        //    await AllDevices.ScaleDevice.ConnectAsync();
+        //    scaleTimer.Change(0, 5000);
+        //}
+        scaleTimer.Change(0, AllDevices.ScaleDevice.IsSimulated ? 5000 : 100);
+        await Task.CompletedTask;
+        //await AllDevices.PadDevice.ConnectAsync(LoadSpi(localSettingsService.PadDeviceSettings));
 
-        PadDevice = new(LoadSPI(localSettingsService.PadDeviceSettings));
-        if (PadDevice is not null) { await PadDevice.ConnectAsync(); }
+        //var allMediaFrameSourceGroups = await AllDevices.CameraDevice.AllMediaFrameSourceGroups();
+        //if (allMediaFrameSourceGroups.Count > 0)
+        //{
+        //    AllDevices.CameraDevice.SelectedMediaFrameSourceGroup = allMediaFrameSourceGroups[AllDevices.CameraDevice.CameraNumber];
+        //    await AllDevices.CameraDevice.ConnectAsync();
+        //}
 
-        var robotIp = await localSettingsService.ReadSettingAsync<string>("RobotIPAddress");
-        if (!string.IsNullOrEmpty(robotIp))
-        {
-            RobotDevice = new(robotIp);
-            await RobotDevice.ConnectAsync();
-            await RobotDevice.InitializeAsync();
-        }
-
-        await CameraDevice.InitializeAsync();
-        if (CameraDevice.AllMediaFrameSourceGroups?.Count > 0)
-        {
-            CameraDevice.SelectedMediaFrameSourceGroup = CameraDevice.AllMediaFrameSourceGroups[0];
-            await CameraDevice.PreviewCamera();
-        }
-
+        //await AllDevices.RobotDevice.ConnectAsync(localSettingsService.RobotIpAddress);
+        //await AllDevices.RobotDevice.InitializeAsync();
+        //if (!AllDevices.RobotDevice.IsConnected && localSettingsService.Simulate)
+        //{
+        //    AllDevices.RobotDevice = new RobotSimulator();
+        //    await AllDevices.RobotDevice.ConnectAsync("simulate");
+        //    await AllDevices.RobotDevice.InitializeAsync();
+        //}
     }
 
-    private SerialPortInfo LoadSPI(SerialPortInfo? setting)
+    //private SerialPortInfo LoadSpi(SerialPortInfo? setting)
+    //{
+    //    if (setting is not null)
+    //    {
+    //        try
+    //        {
+    //            var realPort = AvailablePorts.First(spi => spi.PortName == setting.PortName);
+    //            setting.Id = realPort?.Id;
+    //            if (realPort is null)
+    //            {
+    //                setting = null;
+    //            }
+    //        }
+    //        catch (Exception ex)
+    //        {
+    //            Debug.WriteLine(ex.Message);
+    //            setting = null;
+    //        }
+    //    }
+
+    //    return setting ?? new SerialPortInfo();
+    //}
+
+
+    private async void ProceedTest_PropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (setting is not null)
+        switch (e.PropertyName)
         {
-            try
+            case nameof(ProceedTest.CurrentStep):
+                return;
+            case nameof(ProceedTest.IsRunning) when !ProceedTest.IsRunning:
             {
-                var realPort = AvailablePorts.First(AvailablePorts => AvailablePorts.PortName == setting.PortName);
-                setting.Id = realPort?.Id;
-                if (realPort is null) { setting = null; }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine(ex.Message);
-                setting = null;
+                await db.Context.SaveChangesAsync();
+                if (Parameters.Counter < Parameters.Total)
+                {
+                    await RunNextTest();
+                }
+                else
+                {
+                    IsTesting = false;
+                }
+
+                break;
             }
         }
-        return setting ?? new SerialPortInfo();
-    }
-
-
-
-    private void ProceedTest_PropertyChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        if (e.PropertyName == nameof(ProceedTest.CurrentStep))
-        {
-            return;
-        }
-        if (e.PropertyName == nameof(ProceedTest.IsRunning) && !ProceedTest.IsRunning)
-        {
-            ProceedTest.PropertyChanged -= ProceedTest_PropertyChanged;
-
-            //db.Batches.Where(batch => batch.BatchId == Selected.BatchId).FirstOrDefault()?.Tests?.Add(testInProgress);
-            db.Context.SaveChanges();
-
-            if (Parameters.Counter < Parameters.Total)
-            {
-                // Setup Parameterrs for next test
-                RunNextTest().GetAwaiter().GetResult();
-            }
-            else
-            {
-                IsTesting = false;
-            }
-        }
-    }
-
-    private static int GetValueForNextTest(int counter, int total, int min, int max, bool maxToMin)
-    {
-        Debug.Write($"{counter} / {total}: ");
-        Debug.Write(maxToMin ? $"{max} -> {min} " : $"{min} -> {max}");
-
-        var step = (max - min) / Math.Max(1, total - 1);
-        var result = maxToMin ? max - (counter - 1) * step : min + (counter - 1) * step;
-        
-        Debug.WriteLine($" = {result}");
-        return result;
     }
 
     private async Task RunNextTest()
     {
         ArgumentNullException.ThrowIfNull(Selected);
+        ArgumentNullException.ThrowIfNull(SelectedAlgorithm);
+
         if (ProceedTest?.IsRunning == true)
         {
             return;
@@ -196,40 +223,44 @@ public partial class MainViewModel : ObservableRecipient, IDisposable
         IsTesting = true;
         Parameters.Counter++;
         //Setup Parameterrs for next test
-        Debug.Write($"HighVoltagePhase1: ");
-        Parameters.HighVoltagePhase1 = GetValueForNextTest(Parameters.Counter, Parameters.Total, Parameters.HighVoltagePhase1Lo, Parameters.HighVoltagePhase1Hi, Parameters.HighVoltagePhase1MaxToMin);
-        
-        Debug.Write($"HighVoltagePhase3: ");
-        Parameters.HighVoltagePhase3 = GetValueForNextTest(Parameters.Counter, Parameters.Total, Parameters.HighVoltagePhase3Lo, Parameters.HighVoltagePhase3Hi, Parameters.HighVoltagePhase3MaxToMin);
-        
-        Debug.Write($"DurationPhase1: ");
-        Parameters.DurationPhase1 = GetValueForNextTest(Parameters.Counter, Parameters.Total, Parameters.DurationPhase1Lo, Parameters.DurationPhase1Hi, Parameters.DurationPhase1MaxToMin);
-        
-        Debug.Write($"DurationPhase2: ");
-        Parameters.DurationPhase2 = GetValueForNextTest(Parameters.Counter, Parameters.Total, Parameters.DurationPhase2Lo, Parameters.DurationPhase2Hi, Parameters.DurationPhase2MaxToMin);
-        
-        Debug.Write($"DurationPhase3: ");
-        Parameters.DurationPhase3 = GetValueForNextTest(Parameters.Counter, Parameters.Total, Parameters.DurationPhase3Lo, Parameters.DurationPhase3Hi, Parameters.DurationPhase3MaxToMin);
+        Parameters.HighVoltagePhase1 = GetValueForNextTest(Parameters.Counter, Parameters.Total,
+            Parameters.HighVoltagePhase1Lo, Parameters.HighVoltagePhase1Hi, Parameters.HighVoltagePhase1MaxToMin);
+        Parameters.HighVoltagePhase3 = GetValueForNextTest(Parameters.Counter, Parameters.Total,
+            Parameters.HighVoltagePhase3Lo, Parameters.HighVoltagePhase3Hi, Parameters.HighVoltagePhase3MaxToMin);
+        Parameters.DurationPhase1 = GetValueForNextTest(Parameters.Counter, Parameters.Total,
+            Parameters.DurationPhase1Lo, Parameters.DurationPhase1Hi, Parameters.DurationPhase1MaxToMin);
+        Parameters.DurationPhase2 = GetValueForNextTest(Parameters.Counter, Parameters.Total,
+            Parameters.DurationPhase2Lo, Parameters.DurationPhase2Hi, Parameters.DurationPhase2MaxToMin);
+        Parameters.DurationPhase3 = GetValueForNextTest(Parameters.Counter, Parameters.Total,
+            Parameters.DurationPhase3Lo, Parameters.DurationPhase3Hi, Parameters.DurationPhase3MaxToMin);
 
-        testInProgress = new();
+        await localSettingsService.SaveParametersAsync();
+
+        testInProgress = new Test();
         // Add new test to batches ni db
         Selected.Tests ??= [];
         Selected.Tests.Add(testInProgress);
         await db.Context.SaveChangesAsync();
 
-        ProceedTest = new(localSettingsService)
+        //Setup Parameterrs for next test
+        ArgumentNullException.ThrowIfNull(ProceedTest);
+
+        ProceedTest!.CurrentTest = testInProgress;
+        ProceedTest.Parameters = Parameters;
+        ProceedTest.AllDevices.PadDevice!.Voltages.Clear();
+
+        await ProceedTest.InitializeStepsAsync(SelectedAlgorithm.Id);
+
+        await ProceedTest.StartTest();
+        return;
+
+        static int GetValueForNextTest(int counter, int total, int min, int max, bool maxToMin)
         {
-            PadDevice = PadDevice,
-            ScaleDevice = ScaleDevice,
-            EnvDevice = EnvDevice,
-            RobotDevice = RobotDevice,
-            CameraDevice = CameraDevice,
-            TestObject = testInProgress,
-            Parameters = Parameters
-        };
-        ProceedTest.PropertyChanged += ProceedTest_PropertyChanged;
-        ProceedTest.Start();
+            var step = (counter - 1) * (max - min) / Math.Max(1, total - 1);
+            return maxToMin ? max - step : min + step;
+        }
     }
+
     #endregion
 
     #region RelayCommands
@@ -239,14 +270,16 @@ public partial class MainViewModel : ObservableRecipient, IDisposable
     [RelayCommand]
     public async Task PadStartAsync()
     {
-        await PadDevice.StartCycle(Parameters.IsStartPlusPolarity);
+        ArgumentNullException.ThrowIfNull(AllDevices.PadDevice);
+        await AllDevices.PadDevice.StartCycle(Parameters.IsStartPlusPolarity);
     }
 
 
     [RelayCommand]
     public async Task PadStopAsync()
     {
-        await PadDevice.StopCycle();
+        ArgumentNullException.ThrowIfNull(AllDevices.PadDevice);
+        await AllDevices.PadDevice.StopCycle(false);
     }
 
     [RelayCommand]
@@ -255,50 +288,52 @@ public partial class MainViewModel : ObservableRecipient, IDisposable
         if (xamlRoot is not null)
         {
             Parameters.Counter = 0;
-            if (CanStartTests() && await CustomContentDialog.ShowYesNoQuestionAsync(xamlRoot, "Run tests", $"Do you want to do {Parameters.Total - Parameters.Counter} tests?"))
+            if (CanStartTests() && await CustomContentDialog.ShowYesNoQuestionAsync(xamlRoot, "Run tests",
+                    $"Do you want to do {Parameters.Total - Parameters.Counter} tests?"))
             {
+                Parameters.Counter = 0;
                 await RunNextTest();
             }
         }
         else
         {
-            await CustomContentDialog.ShowInfoAsync(xamlRoot, "Error", $"Please check if all devices are connected and selected batch is not null, and weight is not 0!\nxamlRoot: {xamlRoot is not null}\nSelected: {Selected is not null}");
+            await CustomContentDialog.ShowInfoAsync(xamlRoot, "Error",
+                $"Please check if all devices are connected and selected batch is not null, and weight is not 0!\nxamlRoot: {xamlRoot is not null}\nSelected: {Selected is not null}");
         }
     }
 
     private bool CanStartTests()
-        => (Selected is not null)
-        && (Parameters.Total > Parameters.Counter)
-        && PadDevice?.IsConnected == true
-        && ScaleDevice?.IsConnected == true
-        && EnvDevice?.IsConnected == true
-        && CameraDevice?.IsConnected == true
-        && RobotDevice?.IsConnected == true;
-
-    [RelayCommand]
-    public void SimulateRobotInPosition()
-        => RobotDevice?.SetRegister(localSettingsService.RobotInPositionRegister, true);
+        => Selected is not null
+           && (!ProceedTest?.IsRunning ?? false)
+           && Parameters.Total > Parameters.Counter
+           && AllDevices.PadDevice.IsConnected == true
+           && (AllDevices.ScaleDevice.IsConnected == true )
+           && (AllDevices.TemperatureDevice.IsConnected == true )
+           && (AllDevices.HumidityDevice.IsConnected == true)
+           && (AllDevices.CameraDevice.IsConnected == true || AllDevices.CameraDevice.IsConnected == false)
+           && (AllDevices.RobotDevice.IsConnected == true);
 
     // Scale Commands
     [RelayCommand]
-    public async Task ScaleGetWeightAsync() => await ScaleDevice.GetWeight();
-    [RelayCommand]
-    public async Task ScaleTareAsync() => await ScaleDevice.Tare();
-    [RelayCommand]
-    public async Task ScaleZeroAsync() => await ScaleDevice.Zero();
-
-
-    #endregion
-
-    #region Dispose
-    public void Dispose()
+    public async Task ScaleGetWeightAsync()
     {
-        ProceedTest?.Dispose();
-        scaleTimer?.Dispose();
-        PadDevice?.Dispose();
-        EnvDevice?.Dispose();
-        ScaleDevice?.Dispose();
-        GC.SuppressFinalize(this);
+        ArgumentNullException.ThrowIfNull(AllDevices.ScaleDevice);
+        await AllDevices.ScaleDevice.GetWeight();
     }
+
+    [RelayCommand]
+    public async Task ScaleTareAsync()
+    {
+        ArgumentNullException.ThrowIfNull(AllDevices.ScaleDevice);
+        await AllDevices.ScaleDevice.Tare();
+    }
+
+    [RelayCommand]
+    public async Task ScaleZeroAsync()
+    {
+        ArgumentNullException.ThrowIfNull(AllDevices.ScaleDevice);
+        await AllDevices.ScaleDevice.Zero();
+    }
+
     #endregion
 }

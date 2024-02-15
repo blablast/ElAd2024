@@ -1,0 +1,162 @@
+﻿<Page
+    x:Class="ElAd2024.Views.ManageAlgorithmsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+	xmlns:telerikGrid="using:Telerik.UI.Xaml.Controls.Grid"
+    xmlns:telerikLocal="using:ElAd2024.Telerik"
+    xmlns:viewModel="using:ElAd2024.ViewModels"
+    mc:Ignorable="d"
+    >
+    <Page.Resources>
+        <Style x:Key="TileTextBoxStyle" TargetType="TextBox">
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="TextAlignment" Value="Center"/>
+            <Setter Property="Background" Value="#44000000"/>
+            <Setter Property="Canvas.Left" Value="5"/>
+            <Setter Property="Width" Value="140"/>
+            <Setter Property="CornerRadius" Value="10"/>
+        </Style>
+
+        <Style x:Key="TileTextBlock" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="TextAlignment" Value="Center"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="Canvas.Left" Value="5"/>
+            <Setter Property="Width" Value="140"/>
+        </Style>
+
+        <DataTemplate x:Key="AlgorithmStepTemplateSource" x:DataType="viewModel:AlgorithmStepViewModel">
+            <Border Width="120" Height="60" Margin="-15 10 0 0" CornerRadius="20" Background="{x:Bind Background, Mode=OneWay}" Opacity="0.5" BorderBrush="Orange" BorderThickness="2">
+                <Canvas>
+                    <FontIcon Glyph="{x:Bind IconFront, Mode=OneWay}" FontSize="18" Canvas.Top="10" Canvas.Left="53" HorizontalAlignment="Stretch" />
+                    <TextBlock Text="{x:Bind FrontName, Mode=TwoWay}" Width="120" Canvas.Top="35" HorizontalAlignment="Stretch" TextAlignment="Center" />
+                </Canvas>
+            </Border>
+        </DataTemplate>
+
+        <DataTemplate x:Key="AlgorithmStepTemplate" x:DataType="viewModel:AlgorithmStepViewModel">
+            <Border Width="150" Height="150" Margin="-15 10 0 0" CornerRadius="20" Background="{x:Bind Background, Mode=OneWay}">
+                <Canvas>
+                    <FontIcon 
+                        Glyph="{x:Bind IconFront, Mode=OneWay}" 
+                        FontSize="18" 
+                        Canvas.Left="40"
+                        Canvas.Top="10"
+                        />
+                    <TextBlock
+                        Text="{x:Bind Order, Mode=OneWay}" 
+                        FontSize="16" 
+                        FontWeight="Bold"
+                        Width="35"
+                        HorizontalAlignment="Stretch"
+                        TextAlignment="Center"
+                        Canvas.Left="80"
+                        Canvas.Top="10"
+                        />
+                    <TextBox
+                        Text="{x:Bind FrontName, Mode=TwoWay}" 
+                        Style="{StaticResource TileTextBoxStyle}"
+                        Canvas.Top="35"
+                        />
+
+                    <TextBox
+                        Text="{x:Bind BackName, Mode=TwoWay}"
+                        Style="{StaticResource TileTextBoxStyle}"
+                        Canvas.Top="70"
+                        />
+                    <TextBox
+                        Text="{x:Bind ActionParameter, Mode=TwoWay}"
+                        Style="{StaticResource TileTextBoxStyle}"
+                        Canvas.Top="105"
+                        Visibility="{x:Bind AlgorithmStep.Step.HasParameter}"
+                        />
+                </Canvas>
+            </Border>
+        </DataTemplate>
+    </Page.Resources>
+
+    <Grid x:Name="ContentArea">
+        <StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <Button
+                    Margin=" 10 0"
+                    Content="Add New Test"
+                    Command="{x:Bind ViewModel.AddCommand}"
+                    Style="{StaticResource AccentButtonStyle}"
+                />
+                <Button
+                    Margin=" 10 0"
+                    Content="Delete Selected Test"
+                    Command="{x:Bind ViewModel.DeleteCommand}"
+                    Style="{StaticResource AccentButtonStyle}"
+                />
+            </StackPanel>
+            <telerikGrid:RadDataGrid Margin="0 20 0 0"
+                x:Name="dataGrid"
+                AutoGenerateColumns="False"
+                ItemsSource="{x:Bind ViewModel.Items, Mode=TwoWay}"
+                SelectedItem="{x:Bind ViewModel.Selected, Mode=TwoWay}"
+                IsEnabled="{x:Bind ViewModel.Exists, Mode=OneWay}"
+                UserGroupMode="Disabled"
+                IndentWidth="50">
+                <telerikGrid:RadDataGrid.Commands>
+                    <telerikLocal:CustomTelerikDataGridCommand Id="CommitEdit" Command="{x:Bind ViewModel.CommitEditCommand}" />
+                    <telerikLocal:CustomTelerikDataGridCommand Id="CellTap" Command="{x:Bind ViewModel.CellTapCommand}" />
+                </telerikGrid:RadDataGrid.Commands>
+                <telerikGrid:RadDataGrid.Columns>
+                    <telerikGrid:DataGridTextColumn PropertyName="Id" CanUserEdit="False"/>
+                    <telerikGrid:DataGridTextColumn PropertyName="Name"/>
+                    <telerikGrid:DataGridTextColumn PropertyName="Description"/>
+                    <telerikGrid:DataGridBooleanColumn PropertyName="IsBaseAlgorithm" CanUserEdit="False"/>
+                </telerikGrid:RadDataGrid.Columns>
+            </telerikGrid:RadDataGrid>
+
+            <ListView 
+                ItemsSource="{x:Bind ViewModel.AvailableAlgorithmSteps, Mode=TwoWay}" 
+                ItemTemplate="{StaticResource AlgorithmStepTemplateSource}"
+                CanReorderItems="False" 
+                DragItemsCompleted="ListView_DragItemsCompleted"
+                CanDragItems="True" 
+                DragItemsStarting="ListView_DragItemsStarting"
+                DragOver="ListView_DragOver"
+                AllowDrop="True"
+                Drop="ListView_Drop"
+                HorizontalAlignment="Center" VerticalAlignment="Top"
+                ScrollViewer.HorizontalScrollMode="Enabled"
+                Header="Available steps"
+                Margin="0 0 0 50"
+                Visibility="{x:Bind ViewModel.IsSelected, Mode=OneWay}"
+                >
+                <ListView.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <ItemsWrapGrid Orientation="Horizontal"/>
+                    </ItemsPanelTemplate>
+                </ListView.ItemsPanel>
+            </ListView>
+
+            <ListView 
+                x:Name="TargetListView"
+                ItemsSource="{x:Bind ViewModel.SelectedAlgorithmSteps, Mode=TwoWay}" 
+                ItemTemplate="{StaticResource AlgorithmStepTemplate}"
+                CanReorderItems="True" 
+                DragItemsCompleted="ListView_DragItemsCompleted"
+                CanDragItems="True" 
+                DragItemsStarting="ListView_DragItemsStarting"
+                DragOver="ListView_DragOver"
+                AllowDrop="True"
+                Drop="ListView_Drop"
+                HorizontalAlignment="Center" VerticalAlignment="Top"
+                ScrollViewer.HorizontalScrollMode="Enabled"
+                >
+                <ListView.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <ItemsWrapGrid Orientation="Horizontal"/>
+                    </ItemsPanelTemplate>
+                </ListView.ItemsPanel>
+            </ListView>
+
+        </StackPanel>
+    </Grid>
+</Page>

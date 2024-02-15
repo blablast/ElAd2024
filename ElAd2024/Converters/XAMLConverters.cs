@@ -1,11 +1,21 @@
-﻿using Microsoft.UI;
+﻿using System.Collections.ObjectModel;
+using System.Globalization;
+using ElAd2024.Models;
+using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Media;
-using Windows.Storage;
 
 namespace ElAd2024.Converters;
 
+public class IsSimulatedToBrushConverter : AbstractConverter
+{
+    public override object Convert(object value, Type targetType, object parameter, string language)
+        => new SolidColorBrush(
+            (value is bool targetValue && targetValue) 
+            ? new Windows.UI.Color() { R = 255, G = 68, B = 0, A = 44 } 
+            : new Windows.UI.Color() { R = 0, G = 0, B = 0, A = 0 });
+}
 public class IsMinusPolarityToBrushConverter : AbstractConverter
 {
     public override object Convert(object value, Type targetType, object parameter, string language)
@@ -28,7 +38,7 @@ public class IsMinusPolarityToStringConverter : AbstractConverter
 public class IsPlusPolarityToStringConverter : AbstractConverter
 {
     public override object Convert(object value, Type targetType, object parameter, string language)
-        => (value is bool targetValue ) ? (targetValue ? "+" : "-") : "N/A";
+        => (value is bool targetValue) ? (targetValue ? "+" : "-") : "N/A";
 }
 
 
@@ -42,7 +52,7 @@ public class BoolToNotVisibilityConverter : AbstractConverter
     public override object Convert(object value, Type targetType, object parameter, string language)
         => (value is bool targetValue) ? (targetValue ? Visibility.Collapsed : Visibility.Visible) : Visibility.Collapsed;
 }
-public  class BoolToVisibilityConverter : AbstractConverter
+public class BoolToVisibilityConverter : AbstractConverter
 {
     public override object Convert(object value, Type targetType, object parameter, string language)
         => (value is bool targetValue) ? (targetValue ? Visibility.Visible : Visibility.Collapsed) : Visibility.Collapsed;
@@ -62,4 +72,32 @@ public abstract class AbstractConverter : IValueConverter
 
     public virtual object ConvertBack(object value, Type targetType, object parameter, string language)
         => throw new NotImplementedException();
+}
+
+public class EnumToBooleanConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, string language)
+    {
+        if (parameter is not string enumString)
+        {
+            throw new ArgumentException("ExceptionEnumToBooleanConverterParameterMustBeAnEnumName");
+        }
+
+        if (!Enum.IsDefined(typeof(ElementTheme), value))
+        {
+            throw new ArgumentException("ExceptionEnumToBooleanConverterValueMustBeAnEnum");
+        }
+        return Enum.Parse(typeof(ElementTheme), enumString).Equals(value);
+
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, string language)
+    {
+        if (parameter is string enumString)
+        {
+            return Enum.Parse(typeof(ElementTheme), enumString);
+        }
+
+        throw new ArgumentException("ExceptionEnumToBooleanConverterParameterMustBeAnEnumName");
+    }
 }

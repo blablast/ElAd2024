@@ -1,37 +1,36 @@
 ﻿using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.Collections.Specialized;
+using System.ComponentModel;
 
 namespace ElAd2024.Helpers;
 
-public class ObservableCollectionNotifyPropertyChange<T> : ObservableCollection<T>, INotifyCollectionChanged, INotifyPropertyChanged
-    where T : INotifyPropertyChanged
+public class ObservableCollectionNotifyPropertyChange<T> : ObservableCollection<T> where T : INotifyPropertyChanged
 {
-    public ObservableCollectionNotifyPropertyChange() : base() {  }
-    public ObservableCollectionNotifyPropertyChange(IEnumerable<T> collection) : base(collection) {  }
-    public ObservableCollectionNotifyPropertyChange(List<T> list) : base(list) {  }
+    public ObservableCollectionNotifyPropertyChange() { }
+    public ObservableCollectionNotifyPropertyChange(IEnumerable<T> collection) : base(collection) { }
+    public ObservableCollectionNotifyPropertyChange(List<T> list) : base(list) { }
     private PropertyChangedEventHandler? PropertyChangedEventHandlerDelegate { get; set; }
 
     /// <summary>
-    /// Starts listening to the PropertyChanged event of the items in the collection
+    ///     Starts listening to the PropertyChanged event of the items in the collection
     /// </summary>
-    /// <param name="propertychangedDelegate"></param>
-    public void Start(PropertyChangedEventHandler propertychangedDelegate)
+    /// <param name="propertyChangedDelegate"></param>
+    public void Start(PropertyChangedEventHandler propertyChangedDelegate)
     {
-        PropertyChangedEventHandlerDelegate = propertychangedDelegate;
-        CollectionChanged += Event_ColletionChanged;
+        PropertyChangedEventHandlerDelegate = propertyChangedDelegate;
+        CollectionChanged += Event_CollectionChanged;
         foreach (var item in Items)
         {
             item.PropertyChanged += PropertyChangedEventHandlerDelegate;
         }
     }
-    
+
     /// <summary>
-    /// Stops listening to the PropertyChanged event of the items in the collection
+    ///     Stops listening to the PropertyChanged event of the items in the collection
     /// </summary>
     public void Stop()
     {
-        CollectionChanged -= Event_ColletionChanged;
+        CollectionChanged -= Event_CollectionChanged;
         foreach (var item in Items)
         {
             item.PropertyChanged -= PropertyChangedEventHandlerDelegate;
@@ -39,11 +38,11 @@ public class ObservableCollectionNotifyPropertyChange<T> : ObservableCollection<
     }
 
     /// <summary>
-    /// Changes the PropertyChanged event of the items in the collection
+    ///     Changes the PropertyChanged event of the items in the collection
     /// </summary>
     /// <param name="sender"></param>
     /// <param name="e"></param>
-    private void Event_ColletionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    private void Event_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
         if (e.OldItems is not null)
         {
@@ -63,7 +62,7 @@ public class ObservableCollectionNotifyPropertyChange<T> : ObservableCollection<
     }
 
     /// <summary>
-    /// Forces the refresh of the collection
+    ///     Forces the refresh of the collection
     /// </summary>
     /// <param name="sender"></param>
     public void ForceRefresh()
@@ -77,13 +76,13 @@ public class ObservableCollectionNotifyPropertyChange<T> : ObservableCollection<
             OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
         }
     }
+
     public void ForceRefresh(object? sender)
     {
         if (sender is not null)
         {
-            OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Replace, sender, sender, IndexOf((T)sender)));
+            OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Replace, sender,
+                sender, IndexOf((T)sender)));
         }
     }
-
-
 }

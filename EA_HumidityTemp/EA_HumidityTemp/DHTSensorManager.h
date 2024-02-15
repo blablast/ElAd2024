@@ -8,10 +8,11 @@ class DHTSensorManager {
 private:
     DHTSensor* _sensors; // Pointer to an array of DHTSensor objects
     int _numSensors;     // Number of sensors being managed
+    int _validReads;
 
     // Private method to calculate average temperature or humidity
     // Takes a boolean to determine whether to calculate for temperature or humidity
-    float calculateAverage(bool isTemperature) const {
+    float calculateAverage(bool isTemperature) {
         float sum = 0;
         int validValuesCount = 0;
 
@@ -26,7 +27,7 @@ private:
                 validValuesCount++;
             }
         }
-
+        _validReads = validValuesCount;
         // Calculate the average; return ERRORVALUE if no valid readings were found
         return validValuesCount > 0 ? sum / validValuesCount : ERRORVALUE;
     }
@@ -54,12 +55,12 @@ public:
     }
 
     // Method to get the average temperature from all sensors
-    float getAverageTemperature() const {
+    float getAverageTemperature() {
         return calculateAverage(true);
     }
 
     // Method to get the average humidity from all sensors
-    float getAverageHumidity() const {
+    float getAverageHumidity() {
         return calculateAverage(false);
     }
 
@@ -97,6 +98,8 @@ public:
         Serial.print(',');
         float avgHumidity = getAverageHumidity();
         avgHumidity != ERRORVALUE ? Serial.print(avgHumidity) : Serial.print("Err");
+        Serial.print(',');
+        Serial.print(_validReads);
         Serial.println();
     }
 

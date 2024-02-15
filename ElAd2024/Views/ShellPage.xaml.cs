@@ -1,5 +1,5 @@
 ﻿using ElAd2024.Contracts.Services;
-using ElAd2024.Helpers;
+using ElAd2024.Helpers.General;
 using ElAd2024.ViewModels;
 
 using Microsoft.UI.Xaml;
@@ -36,7 +36,7 @@ public sealed partial class ShellPage : Page
         AppTitleBarText.Text = "AppDisplayName".GetLocalized();
     }
 
-    private void OnLoaded(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
+    private void OnLoaded(object _, Microsoft.UI.Xaml.RoutedEventArgs e)
     {
         TitleBarHelper.UpdateTitleBar(RequestedTheme);
         KeyboardAccelerators.Add(BuildKeyboardAccelerator(VirtualKey.Left, VirtualKeyModifiers.Menu));

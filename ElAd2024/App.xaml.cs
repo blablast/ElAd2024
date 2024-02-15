@@ -1,16 +1,17 @@
 ﻿using ElAd2024.Activation;
+using ElAd2024.Contracts.Devices;
 using ElAd2024.Contracts.Services;
-using ElAd2024.Core.Contracts.Services;
-using ElAd2024.Core.Services;
+using ElAd2024.Devices;
 using ElAd2024.Helpers;
 using ElAd2024.Models;
-using ElAd2024.Notifications;
 using ElAd2024.Services;
+using ElAd2024.Services.General;
 using ElAd2024.ViewModels;
 using ElAd2024.Views;
 
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 
 namespace ElAd2024;
@@ -70,11 +71,14 @@ public partial class App : Application
 
             // EA: Core Services
             services.AddSingleton<IDatabaseService, DatabaseService>();
+            services.AddSingleton<IAllDevices, AllDevices>();
 
             // Core Services
             services.AddSingleton<IFileService, FileService>();
 
             // Views and ViewModels
+            services.AddTransient<ManageAlgorithmsViewModel>();
+            services.AddTransient<ManageAlgorithmsPage>();
             services.AddTransient<TestResultsViewModel>();
             services.AddTransient<TestResultsPage>();
             services.AddTransient<ManageBatchesViewModel>();
@@ -106,10 +110,33 @@ public partial class App : Application
     protected async override void OnLaunched(LaunchActivatedEventArgs args)
     {
         base.OnLaunched(args);
-        await App.GetService<ILocalSettingsService>().InitializeAsync();
-        await App.GetService<IDatabaseService>().InitializeAsync();
-        //App.GetService<IAppNotificationService>().Show(string.Format("AppNotificationSamplePayload".GetLocalized(), AppContext.BaseDirectory));
 
+        var customSplashScreen = new CustomSplashScreen();  
+        App.MainWindow.Content = customSplashScreen;
+        App.MainWindow.Activate();
+        App.MainWindow.ExtendsContentIntoTitleBar = true;
+        await App.GetService<IThemeSelectorService>().SetRequestedThemeAsync();
+        await Task.CompletedTask;
+
+        await Task.Delay(1000);
+
+        customSplashScreen.Progress = "Loading settings...";
+        await App.GetService<ILocalSettingsService>().InitializeAsync();
+        await Task.Delay(500);
+
+        customSplashScreen.Progress = "Connecting to database...";
+        await App.GetService<IDatabaseService>().InitializeAsync();
+        await Task.Delay(500);
+
+        customSplashScreen.Progress = "Connecting to devices...";
+        await App.GetService<IAllDevices>().InitializeAsync();
+
+        customSplashScreen.Progress = "Done!";
+        await Task.Delay(1000);
+
+        //App.GetService<IAppNotificationService>().Show(string.Format("AppNotificationSamplePayload".GetLocalized(), AppContext.BaseDirectory));
+        App.MainWindow.ExtendsContentIntoTitleBar = false;
+        App.MainWindow.Content = null;
         await App.GetService<IActivationService>().ActivateAsync(args);
     }
 }
