@@ -15,6 +15,11 @@ public partial class PadDevice : BaseSerialDevice, IPadDevice
     private readonly int dataCollectionSize;
     private readonly DispatcherQueue dispatcherQueue;
     private bool isRunning = false;
+    private bool isStarting = false;
+    private bool isStopping = false;
+    private bool isPlusPolarity;
+    private DateTime timer;
+
 
     [ObservableProperty] private int axisMaxVoltage = +3000;
     [ObservableProperty] private int axisMinVoltage = -3000;
@@ -64,6 +69,9 @@ public partial class PadDevice : BaseSerialDevice, IPadDevice
             true => "PUL ST+",
             false => "PUL ST-"
         });
+        this.isPlusPolarity = isPlusPolarity;
+        isStarting = true;
+        timer = DateTime.Now;
         isRunning = true;
     }
 
@@ -82,6 +90,8 @@ public partial class PadDevice : BaseSerialDevice, IPadDevice
             });
         }
         await SendDataAsync("PUS DRP");
+        timer = DateTime.Now;
+        isStopping = true;
     }
 
     private void InitializeChartDataCollection() =>
@@ -95,50 +105,12 @@ public partial class PadDevice : BaseSerialDevice, IPadDevice
             index = 0;
         });
 
-    private async Task SendAndWait(string data)
-    {
-        await base.SendDataAsync(data);
-        await Task.Delay(5);
-    }
-
     protected async override Task SendDataAsync(string data)
     {
         Debug.WriteLine($"SendDataAsync: {data}");
 
-        var version = 2;
-
-        switch (version)
-        {
-            case 1:
-                await SendAndWait(data);
-                break;
-
-            case 2:
-                var shortData = new StringBuilder();
-                var maxLength = 2;
-                foreach (var character in data)
-                {
-                    shortData.Append(character);
-                    if (shortData.Length == maxLength)
-                    {
-                        await SendAndWait(shortData.ToString());
-                        shortData.Clear();
-                    }
-                }
-
-                if (shortData.Length > 0)
-                {
-                    await SendAndWait(shortData.ToString());
-                }
-
-                break;
-        }
-
-
-        await base.SendDataAsync(data.ToString());
-        await Task.Delay(5);
-
-
+        DeviceService.Delay = 5;
+        await base.SendDataAsync(data);
     }
 
     protected async override Task StopDevice()
@@ -147,7 +119,7 @@ public partial class PadDevice : BaseSerialDevice, IPadDevice
         await StopCycle(false);
     }
 
-    protected override void ProcessDataLine(string dataLine)
+    protected async override void ProcessDataLine(string dataLine)
     {
         Debug.WriteLine($"ProcessDataLine: {dataLine}");
         if (isRunning && dataLine.StartsWith('A'))
@@ -179,6 +151,28 @@ public partial class PadDevice : BaseSerialDevice, IPadDevice
                     AxisMaxVoltage = Math.Max(AxisMaxVoltage, (int)round(1.1 * highVoltage / 1000.0) * 1000);
                     AxisMinVoltage = Math.Min(AxisMinVoltage, (int)round(1.1 * highVoltage / 1000.0) * 1000);
                 }));
+            }
+        }
+        else if (isStarting && (DateTime.Now.Millisecond - timer.Millisecond)>10 )
+        {
+            if (dataLine.StartsWith("OK"))
+            {
+                isStarting = false;
+            }
+            else
+            {
+                await StartCycle(isPlusPolarity);
+            }
+        }
+        else if (isStopping && (DateTime.Now.Millisecond - timer.Millisecond) > 10)
+        {
+            if (dataLine.StartsWith("OK"))
+            {
+                isStopping = false;
+            }
+            else
+            {
+                await StopCycle(false);
             }
         }
     }

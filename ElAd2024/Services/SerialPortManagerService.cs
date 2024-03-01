@@ -17,6 +17,7 @@ public partial class SerialPortManagerService : ObservableObject, IDisposable
     [ObservableProperty] private bool commandSent;
     private DataReader? dataReader;
     private DataWriter? dataWriter;
+    public int Delay { get; set; } = 0;
 
     public SerialPortInfo? PortInfo { get; set; }
     public SerialDevice? Device { get; set; }
@@ -60,8 +61,23 @@ public partial class SerialPortManagerService : ObservableObject, IDisposable
         ArgumentNullException.ThrowIfNull(Device, nameof(Device));
         ArgumentNullException.ThrowIfNull(dataWriter, nameof(dataWriter));
         ArgumentException.ThrowIfNullOrWhiteSpace(data, nameof(data));
-        
-        dataWriter?.WriteString(data + NewLine);
+
+        if (Delay > 0)
+        {
+            foreach (var c in data)
+            {
+                dataWriter?.WriteString(c.ToString());
+                await dataWriter?.StoreAsync();
+                await Task.Delay(Delay);
+            }
+        }
+        else
+        {
+            dataWriter?.WriteString(data);
+            await dataWriter?.StoreAsync();
+        }
+
+        dataWriter?.WriteString(NewLine);
         await dataWriter?.StoreAsync();
         CommandSent = true;
     }

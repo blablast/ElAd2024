@@ -377,6 +377,7 @@ public partial class ProceedTestService : ObservableRecipient, IProceedTestServi
                                       Parameters.IsStartPlusPolarity);
 
         // Prepare Robot
+        await AllDevices.RobotDevice.SetRegisterAsync(5, true);    // RESET positions
         await AllDevices.RobotDevice.SetRegisterAsync(localSettingsService.RobotLoadForceRegister, Parameters.LoadForce);
         await AllDevices.RobotDevice.SetRegisterAsync(localSettingsService.RobotGotoPositionRegister, 0);
         await DeadStep();
