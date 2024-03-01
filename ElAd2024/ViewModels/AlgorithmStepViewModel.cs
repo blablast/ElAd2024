@@ -2,15 +2,13 @@
 using ElAd2024.Models.Database;
 using Windows.UI;
 using Microsoft.UI.Xaml.Media;
+using ElAd2024.Helpers;
 
 namespace ElAd2024.ViewModels;
 
 public partial class AlgorithmStepViewModel : ObservableObject
 {
-    public AlgorithmStep? AlgorithmStep
-    {
-        get; private set;
-    }
+    public AlgorithmStep AlgorithmStep { get; private set; }
     public int Id { get; }
     [ObservableProperty] private int order;
     [ObservableProperty] private string frontName = string.Empty;
@@ -47,11 +45,17 @@ public partial class AlgorithmStepViewModel : ObservableObject
         Order = AlgorithmStep.Order;
     }
 
-    public void FlipSlow()
+    public bool IsCorrectParameter(string parameter)
     {
-        Random random = new();
-        UpdateInterval = TimeSpan.FromMilliseconds(random.Next(1500, 3000));
+        if (AlgorithmStep.Step.HasParameter && ActionParameter is not null)
+        {
+            return (AlgorithmStep.Step.IsNumericParameter) ? int.TryParse(parameter, out _) : FileNameCheckerHelper.IsValidFileName(ActionParameter);
+        }
+        return !(AlgorithmStep.Step.HasParameter);
     }
+
+    public void FlipSlow()
+        => UpdateInterval = TimeSpan.FromMilliseconds((new Random()).Next(1500, 3000));
     public void Reset()
     {
         IconBack = IconFront;

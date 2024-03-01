@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
+using ElAd2024.Helpers;
 using Microsoft.UI;
 using Microsoft.UI.Xaml.Media;
 using Windows.UI;
@@ -15,32 +16,17 @@ public class Step
         Environment,
         Scale
     }
-    public enum StepType
-    {
-        Start,
-        Stop,
-        Photo,
-        Weight,
-        RobotMoveTo,
-        RobotTouchSkip,
-        Temperature,
-        Humidity,
-        Static,
-        Charge,
-        Pick,
-        Wait,
-        Release
-    }
 
     public int Id { get; set; }
-    public string Name { get; set; } = string.Empty;
     public string BackgroundColor { get; set; } = Colors.Gray.ToString();
     public string ForegroundColor { get; set; } = Colors.Black.ToString();
     public string Icon { get; set; } = "\uE712";
     public bool IsFirst { get; set; } = false;
     public bool IsLast { get; set; } = false;
     public bool IsMoveable { get; set; } = true;
+    public bool IsMandatory { get; set; } = false;
     public bool HasParameter { get; set; } = false;
+    public bool IsNumericParameter { get; set; } = false;
     public string AsyncActionName { get; set; } = string.Empty;
 
     public ICollection<AlgorithmStep> AlgorithmSteps { get; set; } = [];

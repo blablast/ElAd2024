@@ -146,11 +146,11 @@ public partial class MainViewModel : ObservableRecipient, IDisposable
         await Task.CompletedTask;
         //await AllDevices.PadDevice.ConnectAsync(LoadSpi(localSettingsService.PadDeviceSettings));
 
-        //var allMediaFrameSourceGroups = await AllDevices.CameraDevice.AllMediaFrameSourceGroups();
+        //var allMediaFrameSourceGroups = await AllDevices.MediaDevice.AllMediaFrameSourceGroups();
         //if (allMediaFrameSourceGroups.Count > 0)
         //{
-        //    AllDevices.CameraDevice.SelectedMediaFrameSourceGroup = allMediaFrameSourceGroups[AllDevices.CameraDevice.CameraNumber];
-        //    await AllDevices.CameraDevice.ConnectAsync();
+        //    AllDevices.MediaDevice.SelectedMediaFrameSourceGroup = allMediaFrameSourceGroups[AllDevices.MediaDevice.CameraNumber];
+        //    await AllDevices.MediaDevice.ConnectAsync();
         //}
 
         //await AllDevices.RobotDevice.ConnectAsync(localSettingsService.RobotIpAddress);
@@ -310,7 +310,7 @@ public partial class MainViewModel : ObservableRecipient, IDisposable
            && (AllDevices.ScaleDevice.IsConnected == true )
            && (AllDevices.TemperatureDevice.IsConnected == true )
            && (AllDevices.HumidityDevice.IsConnected == true)
-           && (AllDevices.CameraDevice.IsConnected == true || AllDevices.CameraDevice.IsConnected == false)
+           && (AllDevices.MediaDevice.IsConnected == true || AllDevices.MediaDevice.IsConnected == false)
            && (AllDevices.RobotDevice.IsConnected == true);
 
     // Scale Commands
@@ -335,5 +335,13 @@ public partial class MainViewModel : ObservableRecipient, IDisposable
         await AllDevices.ScaleDevice.Zero();
     }
 
+    [RelayCommand]
+    public async Task TestDrive()
+    {
+        await AllDevices.MediaDevice.StartRecording("name");
+        await Task.Delay(5000);
+        await AllDevices.MediaDevice.StopRecording();
+
+    }
     #endregion
 }

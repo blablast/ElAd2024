@@ -3,7 +3,7 @@ using Windows.Media.Capture.Frames;
 using Windows.Media.Playback;
 
 namespace ElAd2024.Contracts.Devices;
-public interface ICameraDevice : IDevice
+public interface IMediaDevice : IDevice
 {
     int CameraNumber { get; set; }
     bool IsRecording { get; }
@@ -15,5 +15,5 @@ public interface ICameraDevice : IDevice
     Task<IReadOnlyList<MediaFrameSourceGroup>> AllMediaFrameSourceGroups();
     Task<(string fileName, string fullPath)> CapturePhoto(string name);
     Task StopRecording();
-    Task<string> StartRecording();
+    Task<string> StartRecording(string name);
 }

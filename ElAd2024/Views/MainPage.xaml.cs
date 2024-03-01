@@ -38,7 +38,6 @@ public sealed partial class MainPage : Page
         }
         else if (e.PropertyName == nameof(ViewModel.IsTesting))
         {
-            ExpanderSettings.IsExpanded = !ViewModel.IsTesting;
             ExpanderPlot.IsExpanded = ViewModel.IsTesting;
         }
     }
@@ -47,8 +46,11 @@ public sealed partial class MainPage : Page
         await ViewModel.InitializeAsync(XamlRoot);
         ArgumentNullException.ThrowIfNull(ViewModel.AllDevices.PadDevice);
         ViewModel.AllDevices.PadDevice.Voltages.CollectionChanged += OnVoltagesChartDataCollectionChanged;
-        CameraPlayback = MediaSource.CreateFromMediaFrameSource(
-            ViewModel.AllDevices.CameraDevice.MediaCapture?.FrameSources[ViewModel.AllDevices.CameraDevice.SelectedMediaFrameSourceGroup?.SourceInfos[0].Id]);
+        if (ViewModel.AllDevices.MediaDevice.SelectedMediaFrameSourceGroup is not null)
+        {
+            CameraPlayback = MediaSource.CreateFromMediaFrameSource(
+             ViewModel.AllDevices.MediaDevice.MediaCapture?.FrameSources[ViewModel.AllDevices.MediaDevice.SelectedMediaFrameSourceGroup?.SourceInfos[0].Id]);
+        }
     }
 
     private void OnUnloaded(object sender, RoutedEventArgs e)

@@ -1,6 +1,7 @@
 ﻿using System.Text.RegularExpressions;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using ElAd2024.Contracts.Devices;
 using ElAd2024.Contracts.Services;
 using ElAd2024.Helpers;
 using ElAd2024.Helpers.General;
@@ -35,14 +36,11 @@ public partial class LocalSettingsService : ObservableRecipient, ILocalSettingsS
     public async Task InitializeAsync()
     {
         isInitialized = true;
-        settings = await Task.Run(() =>
-                       fileService.Read<IDictionary<string, object>>(applicationDataFolder, localSettingsFile)) ??
-                   new Dictionary<string, object>();
+        settings = await Task.Run(() => fileService.Read<Dictionary<string, object>>(applicationDataFolder, localSettingsFile)) ?? [];
 
         // Load settings for each device and other configuration
         EnvDeviceSettings = await ReadSettingAsync<SerialPortInfo>(nameof(EnvDeviceSettings)) ?? new SerialPortInfo();
-        ScaleDeviceSettings =
-            await ReadSettingAsync<SerialPortInfo>(nameof(ScaleDeviceSettings)) ?? new SerialPortInfo();
+        ScaleDeviceSettings = await ReadSettingAsync<SerialPortInfo>(nameof(ScaleDeviceSettings)) ?? new SerialPortInfo();
         PadDeviceSettings = await ReadSettingAsync<SerialPortInfo>(nameof(PadDeviceSettings)) ?? new SerialPortInfo();
        
         RobotGotoPositionRegister = await ReadSettingAsync<int>(nameof(RobotGotoPositionRegister));
@@ -78,7 +76,7 @@ public partial class LocalSettingsService : ObservableRecipient, ILocalSettingsS
 
     private readonly string applicationDataFolder;
     private readonly string localSettingsFile;
-    private IDictionary<string, object> settings;
+    private Dictionary<string, object> settings;
     private bool isInitialized;
 
     #endregion Fields and Constants
@@ -95,6 +93,7 @@ public partial class LocalSettingsService : ObservableRecipient, ILocalSettingsS
     [ObservableProperty] private int robotRunRegister = 2;
     [ObservableProperty] private int robotIsTouchSkipRegister = 3;
     [ObservableProperty] private string? robotIpAddress;
+
     [ObservableProperty] private bool simulate;
 
     [ObservableProperty] private TestParameters parameters = new();
@@ -185,12 +184,17 @@ public partial class LocalSettingsService : ObservableRecipient, ILocalSettingsS
     private static partial Regex IpRegex();
 
     // Invoked when the RobotIpAddress property changes, validates the new value
-    async partial void OnRobotIpAddressChanged(string? value)
+    async partial void OnRobotIpAddressChanged(string? oldValue, string? newValue)
     {
-        value ??= string.Empty;
-        if (value.Length == 0 || IpRegex().IsMatch(value))
+        newValue ??= string.Empty;
+        if (newValue.Length == 0 || IpRegex().IsMatch(newValue))
         {
-            await SaveSettingAsync(nameof(RobotIpAddress), value);
+            await SaveSettingAsync(nameof(RobotIpAddress), newValue);
+            if (oldValue != newValue)
+            {
+                // Conncect to the robot
+                await App.GetService<IAllDevices>().RobotDevice.ConnectAsync(newValue);
+            }
         }
         else
         {
@@ -203,8 +207,6 @@ public partial class LocalSettingsService : ObservableRecipient, ILocalSettingsS
     {
         await Task.CompletedTask;
         //fileService.Delete(applicationDataFolder, localSettingsFile));
-        
-
     }
 
 

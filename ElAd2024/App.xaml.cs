@@ -131,7 +131,7 @@ public partial class App : Application
         customSplashScreen.Progress = "Connecting to devices...";
         await App.GetService<IAllDevices>().InitializeAsync();
 
-        customSplashScreen.Progress = "Done!";
+        customSplashScreen.Progress = "Launching...";
         await Task.Delay(1000);
 
         //App.GetService<IAppNotificationService>().Show(string.Format("AppNotificationSamplePayload".GetLocalized(), AppContext.BaseDirectory));

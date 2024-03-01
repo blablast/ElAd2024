@@ -1,5 +1,7 @@
+using System.Diagnostics;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.UI.Xaml.Controls;
+using Windows.ApplicationModel.Store;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -14,6 +16,6 @@ public sealed partial class CustomSplashScreen : Page
     [ObservableProperty] private string progress = "Loading...";
     public CustomSplashScreen()
     {
-        this.InitializeComponent();
+        InitializeComponent();
     }
 }

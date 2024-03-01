@@ -19,6 +19,7 @@
   </PropertyGroup>
   <ItemGroup>
     <None Remove="Assets\SplashScreen.png" />
+    <None Remove="Resources\Converters.xaml" />
     <None Remove="Views\CustomSplashScreen.xaml" />
     <None Remove="Views\SignInContentDialog.xaml" />
     <None Remove="Views\UserControls\Slider.xaml" />
@@ -69,6 +70,9 @@
     <None Update="appsettings.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <Page Update="Resources\Converters.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Update="Views\CustomSplashScreen.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>

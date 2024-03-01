@@ -1,5 +1,5 @@
 ﻿using System.Collections.ObjectModel;
-
+using System.Diagnostics;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ElAd2024.Contracts.Devices;
@@ -8,15 +8,19 @@ using ElAd2024.Helpers.General;
 using ElAd2024.Models;
 using ElAd2024.Services;
 using ElAd2024.Views;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 
 namespace ElAd2024.ViewModels;
 
-public partial class SettingsViewModel : ObservableRecipient
+public partial class SettingsViewModel : ObservableRecipient, IDisposable
 {
     #region Fields
     private readonly IThemeSelectorService themeSelectorService;
     private XamlRoot? xamlRoot;
+    private readonly DispatcherQueue dispatcherQueue;
+
+    private readonly Timer timerAvailablePorts;
     #endregion
 
     #region Properties
@@ -52,9 +56,18 @@ public partial class SettingsViewModel : ObservableRecipient
         this.themeSelectorService = themeSelectorService;
         LocalSettingsService = localSettingsService;
         this.databaseService = databaseService;
+
+        dispatcherQueue = DispatcherQueue.GetForCurrentThread();
+
         ElementTheme = this.themeSelectorService.Theme;
         VersionDescription = GetVersionDescription();
-        LoadAvailableSerialPortsAndInitializeSettings();
+        timerAvailablePorts = new Timer(LoadAvailableSerialPortsAndInitializeSettings, null, 0, 5000);
+    }
+
+    private async void LoadAvailableSerialPortsAndInitializeSettings(object? state)
+    {
+        dispatcherQueue?.TryEnqueue(async () => { await LoadAvailableSerialPortsAndInitializeSettings(); });
+        await Task.CompletedTask;
     }
     #endregion
 
@@ -62,7 +75,7 @@ public partial class SettingsViewModel : ObservableRecipient
     public async Task InitializeAsync(XamlRoot? xamlRoot)
     {
         this.xamlRoot = xamlRoot;
-        //await themeSelectorService.InitializeAsync();
+        await LoadAvailableSerialPortsAndInitializeSettings();
         await Task.CompletedTask;
     }
     #endregion
@@ -76,7 +89,7 @@ public partial class SettingsViewModel : ObservableRecipient
             value.Name = selected?[(selected.IndexOf(':') + 2)..];
         }
     }
-    private async void LoadAvailableSerialPortsAndInitializeSettings()
+    private async Task LoadAvailableSerialPortsAndInitializeSettings()
     {
         (await SerialPortManagerService.GetAvailableSerialPortsAsync()).ForEach(port => AvailableSerialPorts.Add(port.ToString()));
         SelectedEnvDevicePort = LocalSettingsService.EnvDeviceSettings.ToString();
@@ -115,7 +128,11 @@ public partial class SettingsViewModel : ObservableRecipient
 
     [RelayCommand]
     private async Task SaveSettings()
-        => await LocalSettingsService.SaveSerialsAsync();
+    {
+        await LocalSettingsService.SaveSerialsAsync();
+        await App.GetService<ILocalSettingsService>().InitializeAsync();
+        await App.GetService<IAllDevices>().InitializeAsync();
+    }
 
     [RelayCommand]
     private async Task ResetSettings()
@@ -127,6 +144,12 @@ public partial class SettingsViewModel : ObservableRecipient
             await databaseService.Context.Database.EnsureCreatedAsync();
             //await localSettingsService.ResetAsync();
         }
+    }
+
+    public void Dispose()
+    {
+        timerAvailablePorts.Dispose();
+        GC.SuppressFinalize(this);
     }
     #endregion
 

@@ -8,7 +8,7 @@ public interface IAllDevices : IDisposable
     ObservableCollection<string> AvailablePortsNames { get; }
 
     IPadDevice PadDevice { get; set; }
-    ICameraDevice CameraDevice { get; set; }
+    IMediaDevice MediaDevice { get; set; }
     IHumidityDevice HumidityDevice { get; set; }
     IRobotDevice RobotDevice { get; set; }
     IScaleDevice ScaleDevice { get; set; }
