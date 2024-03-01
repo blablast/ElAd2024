@@ -1,10 +1,12 @@
 ﻿using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Globalization;
+using System.Text;
 using CommunityToolkit.Mvvm.ComponentModel;
 using ElAd2024.Contracts.Devices;
 using ElAd2024.Models.Database;
 using Microsoft.UI.Dispatching;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace ElAd2024.Devices.Serial;
 
@@ -28,9 +30,9 @@ public partial class PadDevice : BaseSerialDevice, IPadDevice
         InitializeChartDataCollection();
     }
 
-    protected async override Task OnConnecting()
+    protected async override Task OnConnected()
     {
-        await SendDataAsync("PUL DRP");
+        await SendDataAsync("PUS DRP");
         await GreenDebug(false);
         await ConsoleEcho(false);
     }
@@ -93,13 +95,50 @@ public partial class PadDevice : BaseSerialDevice, IPadDevice
             index = 0;
         });
 
+    private async Task SendAndWait(string data)
+    {
+        await base.SendDataAsync(data);
+        await Task.Delay(5);
+    }
+
     protected async override Task SendDataAsync(string data)
     {
-        foreach (var character in data)
+        Debug.WriteLine($"SendDataAsync: {data}");
+
+        var version = 2;
+
+        switch (version)
         {
-            await base.SendDataAsync(character.ToString());
-            await Task.Delay(1);
+            case 1:
+                await SendAndWait(data);
+                break;
+
+            case 2:
+                var shortData = new StringBuilder();
+                var maxLength = 2;
+                foreach (var character in data)
+                {
+                    shortData.Append(character);
+                    if (shortData.Length == maxLength)
+                    {
+                        await SendAndWait(shortData.ToString());
+                        shortData.Clear();
+                    }
+                }
+
+                if (shortData.Length > 0)
+                {
+                    await SendAndWait(shortData.ToString());
+                }
+
+                break;
         }
+
+
+        await base.SendDataAsync(data.ToString());
+        await Task.Delay(5);
+
+
     }
 
     protected async override Task StopDevice()
@@ -110,6 +149,7 @@ public partial class PadDevice : BaseSerialDevice, IPadDevice
 
     protected override void ProcessDataLine(string dataLine)
     {
+        Debug.WriteLine($"ProcessDataLine: {dataLine}");
         if (isRunning && dataLine.StartsWith('A'))
         {
             var parts = dataLine[2..].Split(',');

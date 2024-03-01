@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel;
+using System.Diagnostics;
 using System.Reflection;
 using CommunityToolkit.Mvvm.ComponentModel;
 using ElAd2024.Contracts.Devices;
@@ -144,11 +145,10 @@ public partial class ProceedTestService : ObservableRecipient, IProceedTestServi
 
     private async void PadDevice_PropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (!IsRunning || e.PropertyName != nameof(AllDevices.PadDevice.Phase) || AllDevices.PadDevice.Phase == 4)
+        if (IsRunning && e.PropertyName == nameof(AllDevices.PadDevice.Phase) && AllDevices.PadDevice.Phase == 4)
         {
-            return;
+            await DeadStep($"Done!\n{AllDevices.PadDevice.Voltages.LastOrDefault(v => v.Phase == AllDevices.PadDevice.Phase - 1)?.Value}[V]", CurrentStep);
         }
-        await DeadStep($"Done!\n{AllDevices.PadDevice.Voltages.LastOrDefault(v => v.Phase == AllDevices.PadDevice.Phase - 1)?.Value}[V]", CurrentStep);
     }
 
     #endregion Private Methods
@@ -326,6 +326,7 @@ public partial class ProceedTestService : ObservableRecipient, IProceedTestServi
 
     private async Task RobotMoveTo(string? obj)
     {
+        Debug.WriteLine($"RobotMoveTo({obj})");
         if (!int.TryParse(obj, out var position))
         {
             throw new ArgumentException("Invalid parameters in function RobotMoveTo()");
@@ -336,6 +337,7 @@ public partial class ProceedTestService : ObservableRecipient, IProceedTestServi
 
     private async Task RobotTouchSkip(string? obj)
     {
+        Debug.WriteLine($"RobotTouchSkip({obj})");
         if (!int.TryParse(obj, out var position))
         {
             throw new ArgumentException("Invalid parameters in function RobotTouchSkip()");

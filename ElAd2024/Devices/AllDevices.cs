@@ -67,6 +67,8 @@ public partial class AllDevices(ILocalSettingsService localSettingsService) : Ob
         var allMediaFrameSourceGroups = await MediaDevice.AllMediaFrameSourceGroups();
         if (allMediaFrameSourceGroups.Count > 0)
         {
+            MediaDevice.CameraNumber = allMediaFrameSourceGroups.Count - 1;
+            // TODO: Allow select camera
             MediaDevice.SelectedMediaFrameSourceGroup = allMediaFrameSourceGroups[MediaDevice.CameraNumber];
             await MediaDevice.ConnectAsync();
         }

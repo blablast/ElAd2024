@@ -47,7 +47,7 @@ public partial class ManageAlgorithmsViewModel : BaseManageViewModel<Algorithm>
     private AlgorithmStep GetNew(Step step)
         => new()
         {
-            Id = SelectedAlgorithmSteps.Count + 10,
+            //Id = SelectedAlgorithmSteps.Count + 10,
             Step = step,
             FrontName = step.AsyncActionName,
             BackName = "Running...",

@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Security;
 using CommunityToolkit.Mvvm.ComponentModel;
 using ElAd2024.Contracts.Devices;
 using ElAd2024.Models;
@@ -46,6 +47,7 @@ public partial class BaseSerialDevice : ObservableRecipient, IDevice
 
         DeviceService.DataReceived += OnDataReceived;
         IsConnected = true;
+        await OnConnected();
         await StopDevice();
     }
 
@@ -67,6 +69,10 @@ public partial class BaseSerialDevice : ObservableRecipient, IDevice
 
     protected async virtual Task SendDataAsync(string data)
     {
+        if (string.IsNullOrWhiteSpace(data))
+        {
+            throw new ArgumentException("Data cannot be null or empty.", nameof(data));
+        }
         if (IsConnected && !string.IsNullOrEmpty(data))
         {
             await DeviceService.WriteAsync(data);
@@ -74,6 +80,7 @@ public partial class BaseSerialDevice : ObservableRecipient, IDevice
     }
 
     protected virtual Task OnConnecting() => Task.CompletedTask; // Hook for derived classes.
+    protected virtual Task OnConnected() => Task.CompletedTask; // Hook for derived classes.
     protected virtual Task StopDevice() => Task.CompletedTask; // Hook for derived classes.
     protected virtual Task OnDisconnecting() => Task.CompletedTask; // Hook for derived classes.
     protected virtual Task OnDisconnected() => Task.CompletedTask; // Hook for derived classes.
