@@ -19,90 +19,61 @@ public sealed partial class ManageAlgorithmsPage : Page
     {
         ViewModel = App.GetService<ManageAlgorithmsViewModel>();
         InitializeComponent();
+        Loaded += OnLoaded;
+        Unloaded += OnUnloaded;
     }
+
+    private async void OnLoaded(object sender, RoutedEventArgs e)
+        => await ViewModel.InitializeAsync(XamlRoot);
+
+    private void OnUnloaded(object sender, RoutedEventArgs e)
+        => Loaded -= OnLoaded;
 
     private void ListView_DragItemsStarting(object sender, DragItemsStartingEventArgs e)
     {
+        var items = e.Items.OfType<AlgorithmStepViewModel>();
         if ((ListView)sender != TargetListView)
         {
-            HandleSourceListViewDragItemsStarting(e);
+            var itemsTxt = string.Join(",", items.Select(item => item.AlgorithmStep!.Step.Id));
+            e.Data.SetText(itemsTxt);
+            e.Data.RequestedOperation = DataPackageOperation.Copy;
         }
-        else
-        {
-            HandleTargetListViewDragItemsStarting(e);
-        }
-    }
-
-    // Specific handling for starting drag from the source ListView
-    private void HandleSourceListViewDragItemsStarting(DragItemsStartingEventArgs e)
-    {
-        Debug.WriteLine("HandleSourceListViewDragItemsStarting");
-        var items = string.Join(",", e.Items.Cast<AlgorithmStepViewModel>().Select(item => item.AlgorithmStep!.Step.Id));
-        e.Data.SetText(items);
-        e.Data.RequestedOperation = DataPackageOperation.Copy;
-        Debug.WriteLine($"e.Data.RequestedOperation: {e.Data.RequestedOperation}, item.AlgorithmStep.Step.Id: {items}");
-    }
-
-    // Specific handling for starting drag from the target ListView
-    private void HandleTargetListViewDragItemsStarting(DragItemsStartingEventArgs e)
-    {
-        Debug.WriteLine("HandleTargetListViewDragItemsStarting");
-        var items = e.Items.OfType<AlgorithmStepViewModel>();
-        if (!items.Any(item => item.IsMoveable))
+        else if (!items.Any(item => item.IsMoveable))
         {
             e.Cancel = true;
         }
         else
         {
-            var itemsTxt = string.Join(",", e.Items.Cast<AlgorithmStepViewModel>().Select(item => item.AlgorithmStep!.Id)); // Assuming YourItemType has an Id property
+            var itemsTxt = string.Join(",", items.Select(item => item.AlgorithmStep!.Id));
             e.Data.SetText(itemsTxt);
             e.Data.RequestedOperation = DataPackageOperation.Move;
-            Debug.WriteLine($"e.Data.RequestedOperation: {e.Data.RequestedOperation}, ");
         }
+
     }
 
-    // Called when the drag operation is completed
     private void ListView_DragItemsCompleted(ListViewBase sender, DragItemsCompletedEventArgs args)
     {
-        Debug.WriteLine("ListView_DragItemsCompleted");
-        if (sender != TargetListView)
+        if (sender == TargetListView)
         {
-            Debug.WriteLine("DragItemsCompleted from Source ListView");
-        }
-        else
-        {
-            Debug.WriteLine("DragItemsCompleted from Target ListView");
             ViewModel.Reorder();
         }
     }
 
-    // Handles the drag over event for both ListViews
     private void ListView_DragOver(object sender, Microsoft.UI.Xaml.DragEventArgs e)
-    {
-       
-        if ((ListView)sender == TargetListView)
-        {
-            e.AcceptedOperation = DataPackageOperation.Copy;
-            Debug.WriteLine($"ListView_DragOver, e.AcceptedOperation: {e.AcceptedOperation}");
-        }
-        else
-        {
-            e.AcceptedOperation = DataPackageOperation.Move;
+        => e.AcceptedOperation = (ListView)sender == TargetListView ? DataPackageOperation.Copy : DataPackageOperation.Move;
 
-            Debug.WriteLine($"ListView_DragOver, e.AcceptedOperation: {e.AcceptedOperation}");
-        }
-    }
-    // Handles the drop event for both ListViews
     private async void ListView_Drop(object sender, DragEventArgs e)
     {
         if (e.DataView.Contains(StandardDataFormats.Text))
         {
+            var listView = (ListView)sender;
+            var dropIndex = CalculateDropIndexForMultiRow(listView, e.GetPosition(listView));
+
             var idText = await e.DataView.GetTextAsync();
-            var ids = idText.Split(',').Select(int.Parse); // Assuming IDs are int
+            var ids = idText.Split(',').Select(int.Parse);
 
             if ((ListView)sender != TargetListView)
             {
-                // Logic to remove items from ViewModel.SelectedAlgorithmSteps based on dropped IDs
                 var itemsToRemove = ViewModel.SelectedAlgorithmSteps.Where(item => ids.Contains(item.Id)).ToList();
                 foreach (var item in itemsToRemove)
                 {
@@ -113,9 +84,45 @@ public sealed partial class ManageAlgorithmsPage : Page
             {
                 foreach (var item in ids)
                 {
-                    ViewModel.AddAvailableStep(item);
+                    ViewModel.AddAvailableStep(item, dropIndex++);
                 }
             }
         }
     }
+    private static int CalculateDropIndexForMultiRow(ListView listView, Point dropPosition)
+    {
+        var columns = CalculateColumns(listView);
+        var itemWidth = listView.ActualWidth / columns;
+        var itemHeight = DetermineItemHeight(listView);
+        var row = (int)(dropPosition.Y / itemHeight);
+        var column = (int)(dropPosition.X / itemWidth);
+        var index = row * columns + column;
+        return Math.Min(index, listView.Items.Count);
+    }
+
+    private static int CalculateColumns(ListView listView)
+    {
+        var sampleItemContainer = (ListViewItem)listView.ContainerFromIndex(0);
+        if (sampleItemContainer is not null)
+        {
+            var itemWidth = sampleItemContainer.ActualWidth + sampleItemContainer.Margin.Left + sampleItemContainer.Margin.Right;
+            if (itemWidth > 0)
+            {
+                return Math.Max((int)(listView.ActualWidth / itemWidth), 1); // Ensure at least one column
+            }
+        }
+        return 1; // A default column count if unable to determine dynamically.
+    }
+
+    private static double DetermineItemHeight(ListView listView)
+    {
+        var sampleItemContainer = (ListViewItem)listView.ContainerFromIndex(0);
+        if (sampleItemContainer is not null)
+        {
+            return sampleItemContainer.ActualHeight + sampleItemContainer.Margin.Top + sampleItemContainer.Margin.Bottom;
+        }
+        return 150; // A default item height if unable to determine dynamically.
+    }
+
+
 }

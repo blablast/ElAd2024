@@ -29,7 +29,17 @@ public partial class PadDevice : BaseSerialDevice, IPadDevice
     }
 
     protected async override Task OnConnecting()
-    => await SendDataAsync("PUL DRP");
+    {
+        await SendDataAsync("PUL DRP");
+        await GreenDebug(false);
+        await ConsoleEcho(false);
+    }
+
+    private async Task GreenDebug(bool isOn = false)
+        => await SendDataAsync($"SET 12 {(isOn ? 1 : 0)}");
+    private async Task ConsoleEcho(bool isOn = false)
+        => await SendDataAsync($"SET 13 {(isOn ? 0 : 1)}");
+
 
     public ObservableCollection<Voltage> Voltages { get; set; } = [];
 
@@ -62,7 +72,7 @@ public partial class PadDevice : BaseSerialDevice, IPadDevice
         {
             dispatcherQueue.TryEnqueue(() =>
             {
-                var itemsToRemove = Voltages.Where(voltage => voltage.Value is null || voltage.Phase == 0).ToList();
+                var itemsToRemove = Voltages.Where(v => v.Phase == 0).ToList();
                 foreach (var item in itemsToRemove)
                 {
                     Voltages.Remove(item);
@@ -76,12 +86,21 @@ public partial class PadDevice : BaseSerialDevice, IPadDevice
         dispatcherQueue.TryEnqueue(() =>
         {
             Voltages.Clear();
-            for (var i = 0; i < dataCollectionSize ; i++)
+            for (var i = 0; i < dataCollectionSize; i++)
             {
-                Voltages.Add(new Voltage { Elapsed = i - (int)dataCollectionSize + 1, Phase = 0 });
+                Voltages.Add(new Voltage { Elapsed = i - dataCollectionSize + 1, Phase = 0 });
             }
             index = 0;
         });
+
+    protected async override Task SendDataAsync(string data)
+    {
+        foreach (var character in data)
+        {
+            await base.SendDataAsync(character.ToString());
+            await Task.Delay(1);
+        }
+    }
 
     protected async override Task StopDevice()
     {

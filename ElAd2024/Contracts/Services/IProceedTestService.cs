@@ -24,4 +24,5 @@ public interface IProceedTestService : IDisposable
     Test CurrentTest { get; set; }
     Task StartTest();
     Task InitializeStepsAsync(int algorithmId);
+
 }

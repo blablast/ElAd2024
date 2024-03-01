@@ -1,7 +1,11 @@
 ﻿using System.Collections.ObjectModel;
+using System.Diagnostics;
+using CommunityToolkit.Mvvm.Input;
 using ElAd2024.Contracts.Services;
 using ElAd2024.Models.Database;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.UI.Xaml;
+using Newtonsoft.Json.Linq;
 using Windows.ApplicationModel.Appointments.AppointmentsProvider;
 
 namespace ElAd2024.ViewModels;
@@ -9,7 +13,7 @@ namespace ElAd2024.ViewModels;
 public partial class ManageAlgorithmsViewModel : BaseManageViewModel<Algorithm>
 {
     private readonly IDatabaseService db;
-    private readonly ObservableCollection<Algorithm> allAlgorithms;
+    private ObservableCollection<Algorithm> allAlgorithms;
     public ObservableCollection<AlgorithmStepViewModel> SelectedAlgorithmSteps { get; set; } = [];
     public ObservableCollection<AlgorithmStepViewModel> AvailableAlgorithmSteps { get; set; } = [];
 
@@ -25,21 +29,41 @@ public partial class ManageAlgorithmsViewModel : BaseManageViewModel<Algorithm>
         availableSteps.ForEach(step => AvailableAlgorithmSteps.Add(new AlgorithmStepViewModel(GetNew(step))));
     }
 
-    public void AddAvailableStep(int stepId)
+    public void AddAvailableStep(int stepId, int index)
     {
         var step = db.Steps.Single(s => s.Id == stepId);
-        SelectedAlgorithmSteps.Add(new AlgorithmStepViewModel(GetNew(step)));
+
+        if (index >= SelectedAlgorithmSteps.Count)
+        {
+            SelectedAlgorithmSteps.Add(new AlgorithmStepViewModel(GetNew(step)));
+        }
+        else
+        {
+            SelectedAlgorithmSteps.Insert(index, new AlgorithmStepViewModel(GetNew(step)));
+        }
         Reorder();
     }
 
     private AlgorithmStep GetNew(Step step)
         => new()
         {
+            Id = SelectedAlgorithmSteps.Count + 10,
             Step = step,
-            FrontName = step.Name,
+            FrontName = step.AsyncActionName,
             BackName = "Running...",
             ActionParameter = "<Value>"
         };
+
+    protected async override void OnNewAdded(Algorithm newItem)
+    {
+        base.OnNewAdded(newItem);
+        var mandatorySteps = db.Steps.Where(s => s.IsMandatory == true).ToList();
+        var record = db.Algorithms.Single(a => a.Id == newItem.Id);
+        mandatorySteps.ForEach(step => record.AlgorithmSteps.Add(GetNew(step)));
+        await db.Context.SaveChangesAsync();
+
+        allAlgorithms = new ObservableCollection<Algorithm>(db.Algorithms.Include(a => a.AlgorithmSteps).ThenInclude(s => s.Step));
+    }
 
     // Properties changed methods
     protected override void SelectedChanged(Algorithm? value)
@@ -49,36 +73,63 @@ public partial class ManageAlgorithmsViewModel : BaseManageViewModel<Algorithm>
         {
             SelectedAlgorithmSteps.Clear();
             var current = allAlgorithms.Single(a => a.Id == value.Id).AlgorithmSteps.OrderBy(a => a.Order);
-            current.ToList().ForEach(step => SelectedAlgorithmSteps.Add(new AlgorithmStepViewModel(step)));
+
+            foreach (var step in current)
+            {
+                SelectedAlgorithmSteps.Add(new AlgorithmStepViewModel(step));
+            }
+            Reorder();
+            IsSelected = true;
         }
     }
     protected override bool EnsureCanDelete() => Selected?.Id > 1;
 
     public void Reorder()
     {
-        if (SelectedAlgorithmSteps.Count <= 2)
+        if (SelectedAlgorithmSteps.Count < 2)
         {
             return;
         }
 
-        if (!SelectedAlgorithmSteps[0].IsFirst)
-        {
-            var firstItem = SelectedAlgorithmSteps[0];
-            SelectedAlgorithmSteps.RemoveAt(0);
-            SelectedAlgorithmSteps.Insert(1, firstItem);
-        }
-        if (!SelectedAlgorithmSteps[^1].IsLast)
-        {
-            var lastItem = SelectedAlgorithmSteps[^1];
-            SelectedAlgorithmSteps.RemoveAt(SelectedAlgorithmSteps.Count - 1);
-            SelectedAlgorithmSteps.Insert(SelectedAlgorithmSteps.Count - 1, lastItem);
-        }
+        var first = SelectedAlgorithmSteps.Single(s => s.AlgorithmStep!.Step.IsFirst == true);
+        SelectedAlgorithmSteps.Remove(first);
+        SelectedAlgorithmSteps.Insert(0, first);
+
+        var last = SelectedAlgorithmSteps.Single(s => s.AlgorithmStep!.Step.IsLast == true);
+        SelectedAlgorithmSteps.Remove(last);
+        SelectedAlgorithmSteps.Add(last);
 
         for (var i = 0; i < SelectedAlgorithmSteps.Count; i++)
         {
             SelectedAlgorithmSteps[i].Order = i;
         }
 
+    }
+
+    [RelayCommand]
+    private async Task Save(object param)
+    {
+        if (Selected is null) { return; }
+        var selectedId = Selected.Id;
+        var record = db.Algorithms.Single(a => a.Id == selectedId);
+        record.AlgorithmSteps.Clear();
+
+        foreach (var step in SelectedAlgorithmSteps)
+        {
+            record.AlgorithmSteps.Add(new AlgorithmStep
+            {
+                StepId = step.AlgorithmStep!.StepId,
+                Step = step.AlgorithmStep!.Step,
+                FrontName = step.FrontName,
+                BackName = step.BackName,
+                ActionParameter = step.ActionParameter ?? string.Empty,
+                Order = step.Order
+            });
+        }
+
+        await db.Context.SaveChangesAsync();
+        allAlgorithms = new ObservableCollection<Algorithm>(db.Algorithms.Include(a => a.AlgorithmSteps).ThenInclude(s => s.Step));
+        Selected = allAlgorithms.Single(a => a.Id == selectedId);
     }
 
 }

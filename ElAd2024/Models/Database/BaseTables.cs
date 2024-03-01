@@ -1,7 +1,7 @@
 ﻿namespace ElAd2024.Models.Database;
-public class TestValueBaseTable<T> : TestChildBaseTable
+public class TestValueBaseTable<T> : TestChildBaseTable where T : notnull
 {
-    public T? Value { get; set; }
+    public T Value { get; set; } = default!;
 }
 
 public class TestChildBaseTable

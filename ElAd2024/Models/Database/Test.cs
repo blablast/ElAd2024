@@ -10,18 +10,15 @@ public class Test
 {
     public int Id { get; set; }
     public DateTime Date { get; set; }
-    public float Humidity { get; set; }
-    public float Temperature { get; set; }
     public int LoadForce { get; set; }
-    public int HVPhaseCharging { get; set; }
-    public int DurationPhaseCharging { get; set; }
-    public int DurationPhaseIntermediary { get; set; }
-    public int HVPhaseLoading { get; set; }
-    public int DurationPhaseLoading { get; set; }
+    public int Phase1Value { get; set; }
+    public int Phase1Duration { get; set; }
+    public int Phase2Duration { get; set; }
+    public int Phase3Value { get; set; }
+    public int Phase3Duration { get; set; }
     public int DurationPhaseObserving { get; set; }
     public bool IsPlusPolarity { get; set; }
     public bool AutoRegulation { get; set; }
-    public string VideoPath { get; set; } = string.Empty;
 
     public int BatchId { get; set; }
     public Batch Batch { get; set; } = default!;
@@ -31,14 +28,19 @@ public class Test
     public virtual ICollection<ElectroStatic> ElectroStatics { get; set; } = [];
     public virtual ICollection<Voltage> Voltages { get; set; } = [];
     public virtual ICollection<Photo> Photos { get; set; } = [];
+    public virtual ICollection<Video> Videos { get; set; } = [];
     public virtual ICollection<Weight> Weights { get; set; } = [];
     public ICollection<TestStep> TestSteps { get; set; } = [];
 
-    [NotMapped] public int EndOfPhase1 => DurationPhaseCharging / 100;
-    [NotMapped] public int EndOfPhase2 => EndOfPhase1 + DurationPhaseIntermediary / 100;
-    [NotMapped] public int EndOfPhase3 => EndOfPhase2 + DurationPhaseLoading / 100;
-    [NotMapped] public int MaxVoltage => IsPlusPolarity ? HVPhaseCharging : HVPhaseLoading;
-    [NotMapped] public int MinVoltage => IsPlusPolarity ? -HVPhaseLoading : -HVPhaseCharging;
+    [NotMapped]
+    public double Humidity => (Humidities.Count == 0) ? 0 : (double)(Humidities.FirstOrDefault()?.Value ?? 0.0);   
+    public double Temperature => (Temperatures.Count == 0) ? 0 : (double)(Temperatures.FirstOrDefault()?.Value ?? 0.0);
+
+    [NotMapped] public int EndOfPhase1 => Phase1Duration / 100;
+    [NotMapped] public int EndOfPhase2 => EndOfPhase1 + Phase2Duration / 100;
+    [NotMapped] public int EndOfPhase3 => EndOfPhase2 + Phase3Duration / 100;
+    [NotMapped] public int MaxVoltage => IsPlusPolarity ? Phase1Value : Phase3Value;
+    [NotMapped] public int MinVoltage => IsPlusPolarity ? -Phase3Value : -Phase1Value;
 
     [NotMapped]
     public string WeightsToString
@@ -50,6 +52,5 @@ public class Test
             return result.ToString();
         }
     }
-
 
 }

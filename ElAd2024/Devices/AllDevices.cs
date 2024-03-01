@@ -13,7 +13,7 @@ public partial class AllDevices(ILocalSettingsService localSettingsService) : Ob
 {
     private readonly ILocalSettingsService localSettingsService = localSettingsService;
     [ObservableProperty] private IPadDevice padDevice = new PadDevice();
-    [ObservableProperty] private ICameraDevice cameraDevice = new CameraDevice();
+    [ObservableProperty] private IMediaDevice mediaDevice = new MediaDevice();
     [ObservableProperty] private IHumidityDevice humidityDevice = new HumidityAndTemperatureDevice();
     [ObservableProperty] private IRobotDevice robotDevice = new RobotDevice();
     [ObservableProperty] private IScaleDevice scaleDevice = new ScaleDevice();
@@ -37,7 +37,7 @@ public partial class AllDevices(ILocalSettingsService localSettingsService) : Ob
     public async Task InitializeTemperatureAndHumidityAsync()
     {
         await TemperatureDevice.ConnectAsync(LoadSpi(localSettingsService.EnvDeviceSettings));
-        if (TemperatureDevice.IsConnected )
+        if (TemperatureDevice.IsConnected)
         {
             HumidityDevice = (HumidityAndTemperatureDevice)TemperatureDevice;
         }
@@ -64,11 +64,11 @@ public partial class AllDevices(ILocalSettingsService localSettingsService) : Ob
 
     public async Task InitializeCameraAsync()
     {
-        var allMediaFrameSourceGroups = await CameraDevice.AllMediaFrameSourceGroups();
+        var allMediaFrameSourceGroups = await MediaDevice.AllMediaFrameSourceGroups();
         if (allMediaFrameSourceGroups.Count > 0)
         {
-            CameraDevice.SelectedMediaFrameSourceGroup = allMediaFrameSourceGroups[CameraDevice.CameraNumber];
-            await CameraDevice.ConnectAsync();
+            MediaDevice.SelectedMediaFrameSourceGroup = allMediaFrameSourceGroups[MediaDevice.CameraNumber];
+            await MediaDevice.ConnectAsync();
         }
     }
 
@@ -96,7 +96,7 @@ public partial class AllDevices(ILocalSettingsService localSettingsService) : Ob
     public void Dispose()
     {
         PadDevice.Dispose();
-        CameraDevice.Dispose();
+        MediaDevice.Dispose();
         HumidityDevice.Dispose();
         RobotDevice.Dispose();
         ScaleDevice.Dispose();

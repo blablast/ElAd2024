@@ -59,10 +59,11 @@ public abstract partial class BaseManageViewModel<T> : ObservableRecipient, IDis
             throw new InvalidOperationException("Failed to add new item to database!");
         }
         Items.Add(newItem);
+        OnNewAdded(newItem);
+
         Selected = newItem;
         IsSelected = true;
         Exists = Items.Any();
-        OnNewAdded(newItem);
     }
 
     [RelayCommand(CanExecute = nameof(CanDelete))]

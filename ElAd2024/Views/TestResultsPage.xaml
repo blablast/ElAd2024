@@ -105,20 +105,20 @@
                         <TextBlock Style="{StaticResource HeaderGridTextBlockStyle}" HorizontalAlignment="Left" Margin="0 3">
                         <Run Text="HV [V]: "/>
                         <Run Text="{x:Bind IsPlusPolarity, Converter={StaticResource IsPlusPolarityToStringConverter}}" FontWeight="Bold" Foreground="{x:Bind IsPlusPolarity, Converter={StaticResource IsPlusPolarityToBrushConverter}}"/>
-                        <Run Text="{x:Bind HVPhaseCharging}" FontWeight="Bold" Foreground="{x:Bind IsPlusPolarity, Converter={StaticResource IsPlusPolarityToBrushConverter}}"/>
+                        <Run Text="{x:Bind Phase1Value}" FontWeight="Bold" Foreground="{x:Bind IsPlusPolarity, Converter={StaticResource IsPlusPolarityToBrushConverter}}"/>
                         <Run Text=">"  FontWeight="Bold"/>
                         <Run Text="{x:Bind IsPlusPolarity, Converter={StaticResource IsMinusPolarityToStringConverter}}" FontWeight="Bold" Foreground="{x:Bind IsPlusPolarity, Converter={StaticResource IsMinusPolarityToBrushConverter}}"/>
-                        <Run Text="{x:Bind HVPhaseLoading}" FontWeight="Bold"  Foreground="{x:Bind IsPlusPolarity, Converter={StaticResource IsMinusPolarityToBrushConverter}}"/>
+                        <Run Text="{x:Bind Phase3Value}" FontWeight="Bold"  Foreground="{x:Bind IsPlusPolarity, Converter={StaticResource IsMinusPolarityToBrushConverter}}"/>
                         </TextBlock>
                         <TextBlock Style="{StaticResource HeaderGridTextBlockStyle}" HorizontalAlignment="Left" Margin="0 3">
                         <Run Text="Duration [ms]:"/>
                         <LineBreak/>
                         <Run Text="   " />
-                        <Run Text="{x:Bind DurationPhaseCharging}"/>
+                        <Run Text="{x:Bind Phase1Duration}"/>
                         <Run Text=" - " />
-                        <Run Text="{x:Bind DurationPhaseIntermediary}"/>
+                        <Run Text="{x:Bind Phase2Duration}"/>
                         <Run Text=" - " />
-                        <Run Text="{x:Bind DurationPhaseLoading}"/>
+                        <Run Text="{x:Bind Phase3Duration}"/>
                         </TextBlock>
                         <TextBlock Style="{StaticResource HeaderGridTextBlockStyle}" HorizontalAlignment="Left" Margin="0 3">
                         <Run Text="Weights: "/>
@@ -228,11 +228,11 @@
                             <telerikGrid:DataGridNumericalColumn PropertyName="Temperature"/>
                             <telerikGrid:DataGridNumericalColumn PropertyName="LoadForce"/>
                             <telerikGrid:DataGridBooleanColumn PropertyName="IsPlusPolarity"/>
-                            <telerikGrid:DataGridNumericalColumn PropertyName="HVPhaseCharging"/>
-                            <telerikGrid:DataGridNumericalColumn PropertyName="DurationPhaseCharging"/>
-                            <telerikGrid:DataGridNumericalColumn PropertyName="DurationPhaseIntermediary"/>
-                            <telerikGrid:DataGridNumericalColumn PropertyName="HVPhaseLoading"/>
-                            <telerikGrid:DataGridNumericalColumn PropertyName="DurationPhaseLoading"/>
+                            <telerikGrid:DataGridNumericalColumn PropertyName="Phase1Value"/>
+                            <telerikGrid:DataGridNumericalColumn PropertyName="Phase1Duration"/>
+                            <telerikGrid:DataGridNumericalColumn PropertyName="Phase2Duration"/>
+                            <telerikGrid:DataGridNumericalColumn PropertyName="Phase3Value"/>
+                            <telerikGrid:DataGridNumericalColumn PropertyName="Phase3Duration"/>
                             <telerikGrid:DataGridNumericalColumn PropertyName="DurationPhaseObserving"/>
                             <telerikGrid:DataGridBooleanColumn PropertyName="AutoRegulation"/>
                         </telerikGrid:RadDataGrid.Columns>

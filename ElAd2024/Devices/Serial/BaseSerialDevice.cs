@@ -24,7 +24,7 @@ public partial class BaseSerialDevice : ObservableRecipient, IDevice
     {
         if (IsConnected)
         {
-            return;
+            await DisconnectAsync();
         }
 
         if (parameters is SerialPortInfo portInfo)
@@ -65,7 +65,7 @@ public partial class BaseSerialDevice : ObservableRecipient, IDevice
         GC.SuppressFinalize(this);
     }
 
-    protected async Task SendDataAsync(string data)
+    protected async virtual Task SendDataAsync(string data)
     {
         if (IsConnected && !string.IsNullOrEmpty(data))
         {

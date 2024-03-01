@@ -24,20 +24,21 @@ public partial class ProceedTestService : ObservableRecipient, IProceedTestServi
         AllDevices.PadDevice.PropertyChanged -= PadDevice_PropertyChanged;
         AlgorithmSteps?.Stop();
         robotTimer?.Dispose();
-        awaitPadTimer?.Dispose();
+        waitTimer?.Dispose();
         GC.SuppressFinalize(this);
     }
 
     #endregion IDisposable
 
     #region Fields
-
-    private readonly Timer awaitPadTimer;
-    private readonly DispatcherQueue dispatcherQueue;
-    private bool isRobotTimerOn;
     private readonly ILocalSettingsService localSettingsService;
     private readonly IDatabaseService databaseService;
+    private readonly DispatcherQueue dispatcherQueue;
+
     private readonly Timer robotTimer;
+    private readonly Timer waitTimer;
+    private readonly Timer videoTimer;
+    private bool isRobotTimerOn;
     private readonly int robotTimerPeriod = 100;
 
     #endregion Fields
@@ -68,9 +69,11 @@ public partial class ProceedTestService : ObservableRecipient, IProceedTestServi
         AllDevices = allDevices;
 
         // Initialize timers
-        robotTimer = new Timer(CheckRobotPosition, null, Timeout.Infinite, 0);
-        awaitPadTimer = new Timer(AwaitPadTimerCallback, null, Timeout.Infinite, 0);
+        robotTimer = new Timer(UpdateRobotPosition, null, Timeout.Infinite, 0);
+        waitTimer = new Timer(WaitElapsed, null, Timeout.Infinite, 0);
+        videoTimer = new Timer(VideoElapsed, null, Timeout.Infinite, 0);
     }
+
 
     #endregion Constructor
 
@@ -78,24 +81,18 @@ public partial class ProceedTestService : ObservableRecipient, IProceedTestServi
     public async Task StartTest()
     {
         ArgumentNullException.ThrowIfNull(Parameters, nameof(Parameters));
-
         if (AllDevices.ScaleDevice.Weight == 0)
         {
             Error = IProceedTestService.ErrorType.WeightIsZero;
             return;
         }
-
         IsRunning = true;
         AllDevices.PadDevice.PropertyChanged += PadDevice_PropertyChanged;
-
-
         CurrentStep = 0;
-
         await Task.CompletedTask;
     }
     public async Task InitializeStepsAsync(int algorithmId = 1)
     {
-
         AlgorithmSteps.Stop();
         AlgorithmSteps.Clear();
         var dbAs = databaseService.AlgorithmSteps?.Where(a => a.AlgorithmId == algorithmId).OrderBy(a => a.Order).ToList() ?? [];
@@ -108,14 +105,12 @@ public partial class ProceedTestService : ObservableRecipient, IProceedTestServi
         dispatcherQueue.TryEnqueue(() =>
         {
             AlgorithmSteps.ToList().ForEach(step => step.Reset());
-            AlgorithmSteps.ToList().ForEach(step => step.Opacity=0.5);
+            AlgorithmSteps.ToList().ForEach(step => step.Opacity = 0.5);
         });
-        await Task.Delay(10);
-
         await Task.CompletedTask;
     }
 
-    #endregion Constructor
+    #endregion Public Methods
 
     #region Private Methods
     private Func<string?, Task> GetMethodAsFunc(string methodName)
@@ -149,7 +144,7 @@ public partial class ProceedTestService : ObservableRecipient, IProceedTestServi
 
     private async void PadDevice_PropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (!IsRunning || e.PropertyName != nameof(AllDevices.PadDevice.Phase) || AllDevices.PadDevice.Phase is not (2 or 4))
+        if (!IsRunning || e.PropertyName != nameof(AllDevices.PadDevice.Phase) || AllDevices.PadDevice.Phase == 4)
         {
             return;
         }
@@ -176,19 +171,38 @@ public partial class ProceedTestService : ObservableRecipient, IProceedTestServi
         await Task.Delay(10);
     }
 
-    private async void AwaitPadTimerCallback(object? state)
+    private async void VideoElapsed(object? state)
     {
-        awaitPadTimer.Change(Timeout.Infinite, 0);
+        await AllDevices.MediaDevice.StopRecording();
+        videoTimer.Change(Timeout.Infinite, 0);
         await DeadStep();
     }
 
-    private async Task ChargeFabric(string? _)
+    private async Task GetVideo(string? obj)
+    {
+        if (!int.TryParse(obj, out var duration))
+        {
+            throw new ArgumentException("Invalid parameters in function RobotMoveTo()");
+        }
+        await AliveStep();
+        var fileName = await AllDevices.MediaDevice.StartRecording($"{CurrentTest.Id:D5}");
+        CurrentTest.Videos.Add(new Video { FileName = fileName, Description = obj ?? string.Empty });
+        videoTimer.Change(duration * 1000, 0);
+    }
+
+    private async void WaitElapsed(object? state)
+    {
+        waitTimer.Change(Timeout.Infinite, 0);
+        await DeadStep();
+    }
+
+    private async Task TakeFabric(string? _)
     {
         await AliveStep();
         await AllDevices.PadDevice.StartCycle(CurrentTest.IsPlusPolarity);
     }
 
-    private async void CheckRobotPosition(object? _)
+    private async void UpdateRobotPosition(object? _)
     {
         if (!isRobotTimerOn)
         {
@@ -217,7 +231,7 @@ public partial class ProceedTestService : ObservableRecipient, IProceedTestServi
             // Marks a step as completed and updates its UI representation
             counter ??= CurrentStep;
             AlgorithmSteps[counter.Value].FlipSlow();
-            AlgorithmSteps[counter.Value].BackName = message ?? $"{AlgorithmSteps[counter.Value].BackName.Replace("...",".")}\nDone!";
+            AlgorithmSteps[counter.Value].BackName = message ?? $"{AlgorithmSteps[counter.Value].BackName.Replace("...", ".")}\nDone!";
             if (CurrentStep < AlgorithmSteps.Count - 1)
             {
                 CurrentStep++;
@@ -226,7 +240,7 @@ public partial class ProceedTestService : ObservableRecipient, IProceedTestServi
         await Task.CompletedTask;
     }
 
-    
+
 
     private async Task Finish(string? _)
     {
@@ -248,7 +262,7 @@ public partial class ProceedTestService : ObservableRecipient, IProceedTestServi
     {
         await AliveStep();
 
-        var (fileName, fullPath) = await AllDevices.CameraDevice.CapturePhoto($"{CurrentTest.Id:D5}_{obj?.Replace(" ", "_")}");
+        var (fileName, fullPath) = await AllDevices.MediaDevice.CapturePhoto($"{CurrentTest.Id:D5}_{obj?.Replace(" ", "_")}");
         CurrentTest.Photos.Add(
             new Photo
             {
@@ -281,17 +295,12 @@ public partial class ProceedTestService : ObservableRecipient, IProceedTestServi
         await DeadStep($"{weight}g");
     }
 
-    private async Task LoadFabric(string? _)
-    {
-        await AliveStep();
-    }
-
     private async Task Wait(string? _)
     {
         if (int.TryParse(_, out var duration) && duration > 0)
         {
-            await AliveStep($"{duration/1000:F1}s.");
-            awaitPadTimer.Change(duration, 0);
+            await AliveStep($"{duration / 1000:F1}s.");
+            waitTimer.Change(duration, 0);
         }
         else
         {
@@ -311,6 +320,7 @@ public partial class ProceedTestService : ObservableRecipient, IProceedTestServi
         await AllDevices.RobotDevice.SetRegisterAsync(localSettingsService.RobotIsTouchSkipRegister, touchSkip);
         await AllDevices.RobotDevice.SetRegisterAsync(localSettingsService.RobotGotoPositionRegister, position);
         await AllDevices.RobotDevice.SetRegisterAsync(localSettingsService.RobotInPositionRegister, false);
+        await AllDevices.RobotDevice.SetRegisterAsync(localSettingsService.RobotRunRegister, true);
         robotTimer.Change(0, robotTimerPeriod);
     }
 
@@ -353,11 +363,11 @@ public partial class ProceedTestService : ObservableRecipient, IProceedTestServi
 
         // Prepare DB
         CurrentTest.Date = DateTime.Now;
-        CurrentTest.HVPhaseCharging = Parameters.HighVoltagePhase1;
-        CurrentTest.HVPhaseLoading = Parameters.HighVoltagePhase3;
-        CurrentTest.DurationPhaseCharging = Parameters.DurationPhase1;
-        CurrentTest.DurationPhaseIntermediary = Parameters.DurationPhase2;
-        CurrentTest.DurationPhaseLoading = Parameters.DurationPhase3;
+        CurrentTest.Phase1Value = Parameters.HighVoltagePhase1;
+        CurrentTest.Phase3Value = Parameters.HighVoltagePhase3;
+        CurrentTest.Phase1Duration = Parameters.DurationPhase1;
+        CurrentTest.Phase2Duration = Parameters.DurationPhase2;
+        CurrentTest.Phase3Duration = Parameters.DurationPhase3;
         CurrentTest.DurationPhaseObserving = Parameters.DurationObserving;
         CurrentTest.LoadForce = Parameters.LoadForce;
         CurrentTest.AutoRegulation = Parameters.AutoRegulationHV;
