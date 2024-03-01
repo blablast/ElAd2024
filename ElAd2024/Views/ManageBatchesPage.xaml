@@ -34,7 +34,6 @@
             />
         </StackPanel>
         <telerikGrid:RadDataGrid Margin="0 20 0 0"
-    x:Name="dataGrid"
     AutoGenerateColumns="False"
     ItemsSource="{x:Bind ViewModel.Items, Mode=TwoWay}"
     IsEnabled="{x:Bind ViewModel.Exists, Mode=OneWay}"

@@ -37,7 +37,7 @@ public partial class AllDevices(ILocalSettingsService localSettingsService) : Ob
     public async Task InitializeTemperatureAndHumidityAsync()
     {
         await TemperatureDevice.ConnectAsync(LoadSpi(localSettingsService.EnvDeviceSettings));
-        if (TemperatureDevice.IsConnected && localSettingsService.Simulate)
+        if (TemperatureDevice.IsConnected )
         {
             HumidityDevice = (HumidityAndTemperatureDevice)TemperatureDevice;
         }

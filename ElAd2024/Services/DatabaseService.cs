@@ -51,6 +51,8 @@ public partial class DatabaseService : DbContext, IDatabaseService
         {
             await InitializeAlgorithms();
         }
+
+        Debug.WriteLine($"{DbPath}");
     }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) =>

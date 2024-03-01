@@ -21,6 +21,7 @@ public partial class ScaleDevice : BaseSerialDevice, IScaleDevice
         }
     }
 
+    
     public async Task Tare()
         => await SendDataAsync("ST");
 

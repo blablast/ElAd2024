@@ -127,7 +127,6 @@
                 ScrollViewer.HorizontalScrollMode="Enabled"
                 Header="Available steps"
                 Margin="0 0 0 50"
-                Visibility="{x:Bind ViewModel.IsSelected, Mode=OneWay}"
                 >
                 <ListView.ItemsPanel>
                     <ItemsPanelTemplate>
