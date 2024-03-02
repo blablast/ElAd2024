@@ -14,11 +14,7 @@ public partial class PadDevice : BaseSerialDevice, IPadDevice
 {
     private readonly int dataCollectionSize;
     private readonly DispatcherQueue dispatcherQueue;
-    private bool isRunning = false;
-    private bool isStarting = false;
-    private bool isStopping = false;
-    private bool isPlusPolarity;
-    private DateTime timer;
+    public Queue<string> Commands { get; set; } = [];
 
 
     [ObservableProperty] private int axisMaxVoltage = +3000;
@@ -33,6 +29,7 @@ public partial class PadDevice : BaseSerialDevice, IPadDevice
         dispatcherQueue = DispatcherQueue.GetForCurrentThread();
         this.dataCollectionSize = dataCollectionSize;
         InitializeChartDataCollection();
+        DeviceService.Delay = 5;
     }
 
     protected async override Task OnConnected()
@@ -69,15 +66,11 @@ public partial class PadDevice : BaseSerialDevice, IPadDevice
             true => "PUL ST+",
             false => "PUL ST-"
         });
-        this.isPlusPolarity = isPlusPolarity;
-        isStarting = true;
-        timer = DateTime.Now;
-        isRunning = true;
     }
 
     public async Task StopCycle(bool trimData)
     {
-        isRunning = false;
+        
         if (trimData)
         {
             dispatcherQueue.TryEnqueue(() =>
@@ -90,8 +83,6 @@ public partial class PadDevice : BaseSerialDevice, IPadDevice
             });
         }
         await SendDataAsync("PUS DRP");
-        timer = DateTime.Now;
-        isStopping = true;
     }
 
     private void InitializeChartDataCollection() =>
@@ -107,10 +98,12 @@ public partial class PadDevice : BaseSerialDevice, IPadDevice
 
     protected async override Task SendDataAsync(string data)
     {
-        Debug.WriteLine($"SendDataAsync: {data}");
-
-        DeviceService.Delay = 5;
-        await base.SendDataAsync(data);
+        Commands.Enqueue(data);
+        Debug.WriteLine($"SendDataAsync: {data}, total commands in buffer: {Commands.Count}");
+        if (Commands.Count == 1)
+        {
+            await base.SendDataAsync(Commands.Peek());
+        }
     }
 
     protected async override Task StopDevice()
@@ -122,7 +115,7 @@ public partial class PadDevice : BaseSerialDevice, IPadDevice
     protected async override void ProcessDataLine(string dataLine)
     {
         Debug.WriteLine($"ProcessDataLine: {dataLine}");
-        if (isRunning && dataLine.StartsWith('A'))
+        if (dataLine.StartsWith("A:"))
         {
             var parts = dataLine[2..].Split(',');
             if (parts.Length == 3
@@ -153,26 +146,15 @@ public partial class PadDevice : BaseSerialDevice, IPadDevice
                 }));
             }
         }
-        else if (isStarting && (DateTime.Now.Millisecond - timer.Millisecond)>10 )
+        else if (Commands.Count > 0)
         {
             if (dataLine.StartsWith("OK"))
             {
-                isStarting = false;
+                Commands.Dequeue();
             }
-            else
+            else if (dataLine.StartsWith("ERR"))
             {
-                await StartCycle(isPlusPolarity);
-            }
-        }
-        else if (isStopping && (DateTime.Now.Millisecond - timer.Millisecond) > 10)
-        {
-            if (dataLine.StartsWith("OK"))
-            {
-                isStopping = false;
-            }
-            else
-            {
-                await StopCycle(false);
+                await SendDataAsync(Commands.Peek());
             }
         }
     }
