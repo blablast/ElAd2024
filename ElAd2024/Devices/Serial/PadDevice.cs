@@ -102,6 +102,7 @@ public partial class PadDevice : BaseSerialDevice, IPadDevice
         Debug.WriteLine($"SendDataAsync: {data}, total commands in buffer: {Commands.Count}");
         if (Commands.Count == 1)
         {
+            Debug.WriteLine($"Sending 1 command: {Commands.Peek()}");
             await base.SendDataAsync(Commands.Peek());
         }
     }
@@ -148,13 +149,20 @@ public partial class PadDevice : BaseSerialDevice, IPadDevice
         }
         else if (Commands.Count > 0)
         {
+            
             if (dataLine.StartsWith("OK"))
             {
                 Commands.Dequeue();
+                if (Commands.Count > 0)
+                {
+                    Debug.WriteLine($"Sending next command: {Commands.Peek()}");
+                    await base.SendDataAsync(Commands.Peek());
+                }
             }
             else if (dataLine.StartsWith("ERR"))
             {
-                await SendDataAsync(Commands.Peek());
+                Debug.WriteLine($"Error: {dataLine}, sending again: {Commands.Peek()}");
+                await base.SendDataAsync(Commands.Peek());
             }
         }
     }
