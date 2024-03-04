@@ -193,7 +193,7 @@
                                     <ToggleSwitch OffContent="-" OnContent="+" FontSize="24" IsOn="{x:Bind ViewModel.Parameters.IsStartPlusPolarity, Mode=TwoWay}" />
                                     <NumberBox Header="Change every" Value="{x:Bind ViewModel.Parameters.ChangePolarityStep, Mode=TwoWay}" SmallChange="1" Minimum="1" Maximum="100" Style="{StaticResource NumberBoxStyle}"
                                             Margin="0 24 0 0" />
-                                    <NumberBox Header="Load Force [N]" Value="{x:Bind ViewModel.Parameters.LoadForce, Mode=TwoWay}" SmallChange="1" Minimum="1" Maximum="30" Margin="0 12 0 0"  Style="{StaticResource NumberBoxStyle}" />
+                                    <NumberBox Header="Load Force [N]" Value="{x:Bind ViewModel.Parameters.LoadForce, Mode=TwoWay}" SmallChange="1" Minimum="1" Maximum="60" Margin="0 12 0 0"  Style="{StaticResource NumberBoxStyle}" />
                                     <CheckBox IsChecked="{x:Bind ViewModel.Parameters.AutoRegulationHV, Mode=TwoWay}" Margin="20 18 0 0">Auto regulation HV</CheckBox>
                                 </StackPanel>
                                 <StackPanel HorizontalAlignment="Stretch" Margin="60 0 0 0 ">

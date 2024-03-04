@@ -25,7 +25,6 @@ public partial class ProceedTestService : ObservableRecipient, IProceedTestServi
         AllDevices.PadDevice.PropertyChanged -= PadDevice_PropertyChanged;
         AlgorithmSteps?.Stop();
         robotTimer?.Dispose();
-        waitTimer?.Dispose();
         GC.SuppressFinalize(this);
     }
 
@@ -36,9 +35,8 @@ public partial class ProceedTestService : ObservableRecipient, IProceedTestServi
     private readonly IDatabaseService databaseService;
     private readonly DispatcherQueue dispatcherQueue;
 
-    private readonly Timer robotTimer;
-    private readonly Timer waitTimer;
-    private readonly Timer videoTimer;
+    private Timer? robotTimer;
+    private Timer? videoTimer;
     private bool isRobotTimerOn;
     private readonly int robotTimerPeriod = 100;
 
@@ -70,9 +68,6 @@ public partial class ProceedTestService : ObservableRecipient, IProceedTestServi
         AllDevices = allDevices;
 
         // Initialize timers
-        robotTimer = new Timer(UpdateRobotPosition, null, Timeout.Infinite, 0);
-        waitTimer = new Timer(WaitElapsed, null, Timeout.Infinite, 0);
-        videoTimer = new Timer(VideoElapsed, null, Timeout.Infinite, 0);
     }
 
 
@@ -89,8 +84,12 @@ public partial class ProceedTestService : ObservableRecipient, IProceedTestServi
         }
         IsRunning = true;
         AllDevices.PadDevice.PropertyChanged += PadDevice_PropertyChanged;
+
+        robotTimer = new Timer(UpdateRobotPosition, null, Timeout.Infinite, 0);
+        videoTimer = new Timer(VideoElapsed, null, Timeout.Infinite, 0);
+
         CurrentStep = 0;
-        await Task.CompletedTask;
+        await CurrentStepChanged();
     }
     public async Task InitializeStepsAsync(int algorithmId = 1)
     {
@@ -102,7 +101,6 @@ public partial class ProceedTestService : ObservableRecipient, IProceedTestServi
             AlgorithmSteps.Add(new AlgorithmStepViewModel(algorithmStep));
         }
         AlgorithmSteps.Start(OnAlgorithmStepChanged);
-
         dispatcherQueue.TryEnqueue(() =>
         {
             AlgorithmSteps.ToList().ForEach(step => step.Reset());
@@ -122,32 +120,31 @@ public partial class ProceedTestService : ObservableRecipient, IProceedTestServi
             throw new ArgumentException($"Method '{methodName}' not found.");
         return (Func<string?, Task>)Delegate.CreateDelegate(typeof(Func<string?, Task>), this, methodInfo);
     }
-    async partial void OnCurrentStepChanged(int value)
-    {
 
+    private async Task CurrentStepChanged()
+    {
         //if (value < Steps.Count)
-        if (value < AlgorithmSteps?.Count)
+        if (CurrentStep < AlgorithmSteps?.Count)
         {
-            Func<string?, Task> method = GetMethodAsFunc(AlgorithmSteps[value].AlgorithmStep!.Step.AsyncActionName);
+            Func<string?, Task> method = GetMethodAsFunc(AlgorithmSteps[CurrentStep].AlgorithmStep!.Step.AsyncActionName);
             CurrentTest.TestSteps.Add(
                        new TestStep
                        {
-                           Step = AlgorithmSteps[value].AlgorithmStep!.Step,
-                           ActionParameter = AlgorithmSteps[value].AlgorithmStep!.ActionParameter,
-                           FrontName = AlgorithmSteps[value].AlgorithmStep!.FrontName
+                           Step = AlgorithmSteps[CurrentStep].AlgorithmStep!.Step,
+                           ActionParameter = AlgorithmSteps[CurrentStep].AlgorithmStep!.ActionParameter,
+                           FrontName = AlgorithmSteps[CurrentStep].AlgorithmStep!.FrontName
                        });
-            await method(AlgorithmSteps[value].ActionParameter);
+            await method(AlgorithmSteps[CurrentStep].ActionParameter);
         }
     }
-
     private void OnAlgorithmStepChanged(object? sender, PropertyChangedEventArgs e)
-        => AlgorithmSteps?.ForceRefresh(sender);
+        => dispatcherQueue?.TryEnqueue(() => AlgorithmSteps?.ForceRefresh(sender));
 
     private async void PadDevice_PropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (IsRunning && e.PropertyName == nameof(AllDevices.PadDevice.Phase) && AllDevices.PadDevice.Phase == 4)
         {
-            await DeadStep($"Done!\n{AllDevices.PadDevice.Voltages.LastOrDefault(v => v.Phase == AllDevices.PadDevice.Phase - 1)?.Value}[V]", CurrentStep);
+            await DeadStep($"Done!\n{AllDevices.PadDevice.Voltages.LastOrDefault(v => v.Phase == AllDevices.PadDevice.Phase - 1)?.Value}[V]");
         }
     }
 
@@ -157,24 +154,22 @@ public partial class ProceedTestService : ObservableRecipient, IProceedTestServi
 
     private async Task AliveStep(string? message = null)
     {
-        // Updates UI to indicate a step is currently being processed
-        int? counter = CurrentStep;
         dispatcherQueue.TryEnqueue(() =>
         {
-            AlgorithmSteps[counter.Value].Opacity = 1;
+            AlgorithmSteps[CurrentStep].Opacity = 1;
             if (message?.Length > 0)
             {
-                AlgorithmSteps[counter.Value].BackName = message;
+                AlgorithmSteps[CurrentStep].BackName = message;
             }
-            AlgorithmSteps[counter.Value].IsFrozen = false;
+            AlgorithmSteps[CurrentStep].IsFrozen = false;
         });
-        await Task.Delay(10);
+        await Task.Delay(1);
     }
 
     private async void VideoElapsed(object? state)
     {
         await AllDevices.MediaDevice.StopRecording();
-        videoTimer.Change(Timeout.Infinite, 0);
+        videoTimer?.Change(Timeout.Infinite, 0);
         await DeadStep();
     }
 
@@ -190,12 +185,6 @@ public partial class ProceedTestService : ObservableRecipient, IProceedTestServi
         videoTimer.Change(duration * 1000, 0);
     }
 
-    private async void WaitElapsed(object? state)
-    {
-        waitTimer.Change(Timeout.Infinite, 0);
-        await DeadStep();
-    }
-
     private async Task TakeFabric(string? _)
     {
         await AliveStep();
@@ -209,7 +198,7 @@ public partial class ProceedTestService : ObservableRecipient, IProceedTestServi
             isRobotTimerOn = true;
             if (await AllDevices.RobotDevice.GetFlagRegisterAsync(localSettingsService.RobotInPositionRegister))
             {
-                robotTimer.Change(Timeout.Infinite, 0);
+                robotTimer?.Change(Timeout.Infinite, 0);
                 await DeadStep();
             }
             else
@@ -224,23 +213,20 @@ public partial class ProceedTestService : ObservableRecipient, IProceedTestServi
         }
     }
 
-    private async Task DeadStep(string? message = null, int? counter = null)
+    private async Task DeadStep(string? message = null)
     {
-        dispatcherQueue.TryEnqueue(() =>
+        dispatcherQueue.TryEnqueue(async () =>
         {
-            // Marks a step as completed and updates its UI representation
-            counter ??= CurrentStep;
-            AlgorithmSteps[counter.Value].FlipSlow();
-            AlgorithmSteps[counter.Value].BackName = message ?? $"{AlgorithmSteps[counter.Value].BackName.Replace("...", ".")}\nDone!";
+            AlgorithmSteps[CurrentStep].FlipSlow();
+            AlgorithmSteps[CurrentStep].BackName = message ?? $"{AlgorithmSteps[CurrentStep].BackName.Replace("...", ".")}\nDone!";
             if (CurrentStep < AlgorithmSteps.Count - 1)
             {
                 CurrentStep++;
+                await CurrentStepChanged();
             }
         });
         await Task.CompletedTask;
     }
-
-
 
     private async Task Finish(string? _)
     {
@@ -248,6 +234,8 @@ public partial class ProceedTestService : ObservableRecipient, IProceedTestServi
         CurrentTest.Voltages = new List<Voltage>(AllDevices.PadDevice.Voltages);
         IsRunning = false;
         await DeadStep();
+        robotTimer?.Dispose();
+        videoTimer?.Dispose();
         AllDevices.PadDevice.PropertyChanged -= PadDevice_PropertyChanged;
     }
 
@@ -274,7 +262,7 @@ public partial class ProceedTestService : ObservableRecipient, IProceedTestServi
         {
             AlgorithmSteps[CurrentStep].ImageSource = fullPath;
         });
-        await DeadStep(string.Empty);
+        await DeadStep();
     }
 
     private async Task GetTemperature(string? _)
@@ -295,18 +283,19 @@ public partial class ProceedTestService : ObservableRecipient, IProceedTestServi
         await DeadStep($"{weight}g");
     }
 
-    private async Task Wait(string? _)
+    private async Task Wait(string? durationString)
     {
-        if (int.TryParse(_, out var duration) && duration > 0)
+        if (!int.TryParse(durationString, out var duration) || duration <= 0)
         {
-            await AliveStep($"{duration / 1000:F1}s.");
-            waitTimer.Change(duration, 0);
+            throw new ArgumentException("Invalid parameters in function Wait()");
         }
-        else
-        {
-            throw new ArgumentException("Invalid parameters in function ObserveFabric()");
-        }
+
+        await AliveStep($"{duration / 1000:F1}s.");
+        await Task.Delay(duration);
+        await DeadStep();
     }
+
+
 
     private async Task ReleaseFabric(string? _)
     {
@@ -317,16 +306,17 @@ public partial class ProceedTestService : ObservableRecipient, IProceedTestServi
 
     private async Task RobotCommand(int position, bool touchSkip)
     {
+
+        await AllDevices.RobotDevice.SetRegisterAsync(localSettingsService.RobotInPositionRegister, false);
+        await Task.Delay(100);
         await AllDevices.RobotDevice.SetRegisterAsync(localSettingsService.RobotIsTouchSkipRegister, touchSkip);
         await AllDevices.RobotDevice.SetRegisterAsync(localSettingsService.RobotGotoPositionRegister, position);
-        await AllDevices.RobotDevice.SetRegisterAsync(localSettingsService.RobotInPositionRegister, false);
         await AllDevices.RobotDevice.SetRegisterAsync(localSettingsService.RobotRunRegister, true);
-        robotTimer.Change(0, robotTimerPeriod);
+        robotTimer.Change(robotTimerPeriod, robotTimerPeriod);
     }
 
     private async Task RobotMoveTo(string? obj)
     {
-        Debug.WriteLine($"RobotMoveTo({obj})");
         if (!int.TryParse(obj, out var position))
         {
             throw new ArgumentException("Invalid parameters in function RobotMoveTo()");
@@ -337,7 +327,6 @@ public partial class ProceedTestService : ObservableRecipient, IProceedTestServi
 
     private async Task RobotTouchSkip(string? obj)
     {
-        Debug.WriteLine($"RobotTouchSkip({obj})");
         if (!int.TryParse(obj, out var position))
         {
             throw new ArgumentException("Invalid parameters in function RobotTouchSkip()");
@@ -350,8 +339,6 @@ public partial class ProceedTestService : ObservableRecipient, IProceedTestServi
     private async Task Start(object? _)
     {
         AlgorithmSteps.ToList().ForEach(step => step.Reset());
-        await Task.Delay(10);
-        // Prepare PAD
         await AliveStep();
         await AllDevices.PadDevice.Setup(new List<(int Number, int Value)>
         {
@@ -380,6 +367,7 @@ public partial class ProceedTestService : ObservableRecipient, IProceedTestServi
         await AllDevices.RobotDevice.SetRegisterAsync(5, true);    // RESET positions
         await AllDevices.RobotDevice.SetRegisterAsync(localSettingsService.RobotLoadForceRegister, Parameters.LoadForce);
         await AllDevices.RobotDevice.SetRegisterAsync(localSettingsService.RobotGotoPositionRegister, 0);
+
         await DeadStep();
     }
 

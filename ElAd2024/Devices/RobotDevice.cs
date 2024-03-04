@@ -76,22 +76,14 @@ public partial class RobotDevice : ObservableRecipient, IRobotDevice
     public Task DisconnectAsync() => throw new NotImplementedException();
 
     public async Task<bool> SetRegisterAsync(int index, bool value)
-    {
-        return await SetValueAsync($"http://{IpAddress}:3080/COMET/rpc?func=IOVALSET&type=35&index={index}&value={(value ? 1 : 0)}");
-    }
+        => await SetValueAsync($"http://{IpAddress}:3080/COMET/rpc?func=IOVALSET&type=35&index={index}&value={(value ? 1 : 0)}");
 
     //http://{IpAddress}:3080/COMET/rpc?func=IOVALRD&type=35&index=7
     public async Task<bool> SetRegisterAsync(int index, int value)
-    {
-        Debug.WriteLine($"INT: {value}, http://{IpAddress}/karel/ComSet?sValue={value}&sIndx={index}&sRealFlag=0&sFc=2");
-        return await SetValueAsync($"http://{IpAddress}/karel/ComSet?sValue={value}&sIndx={index}&sRealFlag=0&sFc=2");
-    }
+        => await SetValueAsync($"http://{IpAddress}/karel/ComSet?sValue={value}&sIndx={index}&sRealFlag=0&sFc=2");
 
     public async Task<bool> SetRegisterAsync(int index, double value)
-    {
-        Debug.WriteLine($"DOUBLE: {value}, http://{IpAddress}/karel/ComSet?sValue={value.ToString("F6", CultureInfo.InvariantCulture)}&sIndx={index}&sRealFlag=1&sFc=2");
-        return await SetValueAsync($"http://{IpAddress}/karel/ComSet?sValue={value.ToString("F6", CultureInfo.InvariantCulture)}&sIndx={index}&sRealFlag=1&sFc=2");
-    }
+        => await SetValueAsync($"http://{IpAddress}/karel/ComSet?sValue={value.ToString("F6", CultureInfo.InvariantCulture)}&sIndx={index}&sRealFlag=1&sFc=2");
 
     public async Task<bool> SetRegisterAsync(int index, string value)
         => await SetValueAsync($"http://{IpAddress}/karel/ComSet?sValue={value}&sIndx={index}&sFc=15");

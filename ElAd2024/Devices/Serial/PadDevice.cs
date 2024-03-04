@@ -99,10 +99,9 @@ public partial class PadDevice : BaseSerialDevice, IPadDevice
     protected async override Task SendDataAsync(string data)
     {
         Commands.Enqueue(data);
-        Debug.WriteLine($"SendDataAsync: {data}, total commands in buffer: {Commands.Count}");
         if (Commands.Count == 1)
         {
-            Debug.WriteLine($"Sending 1 command: {Commands.Peek()}");
+           // Debug.WriteLine($" -> ({Commands.Count}): {Commands.Peek()}");
             await base.SendDataAsync(Commands.Peek());
         }
     }
@@ -115,7 +114,6 @@ public partial class PadDevice : BaseSerialDevice, IPadDevice
 
     protected async override void ProcessDataLine(string dataLine)
     {
-        Debug.WriteLine($"ProcessDataLine: {dataLine}");
         if (dataLine.StartsWith("A:"))
         {
             var parts = dataLine[2..].Split(',');
@@ -149,19 +147,22 @@ public partial class PadDevice : BaseSerialDevice, IPadDevice
         }
         else if (Commands.Count > 0)
         {
-            
-            if (dataLine.StartsWith("OK"))
+            var sendNext = false;
+            // Debug.WriteLine($" <- {dataLine}");
+            if (dataLine.StartsWith("OK") && dataLine[3..] == Commands.Peek())
             {
+                //Debug.WriteLine($" <- {dataLine}");
                 Commands.Dequeue();
-                if (Commands.Count > 0)
-                {
-                    Debug.WriteLine($"Sending next command: {Commands.Peek()}");
-                    await base.SendDataAsync(Commands.Peek());
-                }
+                sendNext = Commands.Count > 0;
             }
-            else if (dataLine.StartsWith("ERR"))
+            else
             {
-                Debug.WriteLine($"Error: {dataLine}, sending again: {Commands.Peek()}");
+                sendNext = (dataLine.StartsWith("OK") || dataLine.StartsWith("ERR"));
+            }
+
+            if (sendNext)
+            {
+               // Debug.WriteLine($" -> ({Commands.Count}): {Commands.Peek()}");
                 await base.SendDataAsync(Commands.Peek());
             }
         }

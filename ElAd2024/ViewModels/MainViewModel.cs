@@ -93,6 +93,18 @@ public partial class MainViewModel : ObservableRecipient, IDisposable
         dispatcherQueue = DispatcherQueue.GetForCurrentThread();
 
         Parameters = localSettingsService.Parameters;
+        if (Parameters is null)
+        {
+
+            Parameters = new TestParameters();
+            localSettingsService.Parameters = Parameters;
+        }
+        else
+        {
+            // TODO: Change to parameters from db
+            if (Parameters.HighVoltagePhase1Hi == 500) Parameters.HighVoltagePhase1Hi = 5000;
+            if (Parameters.HighVoltagePhase3Hi == 500) Parameters.HighVoltagePhase3Hi = 5000;
+        }
         Parameters.Counter = 0;
 
         Batches = new ObservableCollection<Batch>(db
@@ -198,8 +210,12 @@ public partial class MainViewModel : ObservableRecipient, IDisposable
                 await db.Context.SaveChangesAsync();
                 if (Parameters.Counter < Parameters.Total)
                 {
-                    await RunNextTest();
-                }
+                 //       if (await CustomContentDialog.ShowYesNoQuestionAsync(xamlRoot, "Run tests",
+                 //   $"Do you want to do next test ({Parameters.Counter} of {Parameters.Total}?"))
+                 //       {
+                            await RunNextTest();
+                 //       }
+                    }
                 else
                 {
                     IsTesting = false;
@@ -212,6 +228,7 @@ public partial class MainViewModel : ObservableRecipient, IDisposable
 
     private async Task RunNextTest()
     {
+        await Task.Delay(100);
         ArgumentNullException.ThrowIfNull(Selected);
         ArgumentNullException.ThrowIfNull(SelectedAlgorithm);
 
@@ -245,12 +262,12 @@ public partial class MainViewModel : ObservableRecipient, IDisposable
         //Setup Parameterrs for next test
         ArgumentNullException.ThrowIfNull(ProceedTest);
 
+        Debug.WriteLine($"Setting parameters for test.");
         ProceedTest!.CurrentTest = testInProgress;
         ProceedTest.Parameters = Parameters;
         ProceedTest.AllDevices.PadDevice!.Voltages.Clear();
 
-        await ProceedTest.InitializeStepsAsync(SelectedAlgorithm.Id);
-
+        Debug.WriteLine($"Starting test {Parameters.Counter} of {Parameters.Total}");
         await ProceedTest.StartTest();
         return;
 
@@ -291,8 +308,11 @@ public partial class MainViewModel : ObservableRecipient, IDisposable
             if (CanStartTests() && await CustomContentDialog.ShowYesNoQuestionAsync(xamlRoot, "Run tests",
                     $"Do you want to do {Parameters.Total - Parameters.Counter} tests?"))
             {
-                Parameters.Counter = 0;
-                await RunNextTest();
+                if (SelectedAlgorithm is not null)
+                {
+                    await ProceedTest.InitializeStepsAsync(SelectedAlgorithm.Id);
+                    await RunNextTest();
+                }
             }
         }
         else
