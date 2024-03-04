@@ -10,7 +10,6 @@ using ElAd2024.Models;
 using ElAd2024.Models.Database;
 using ElAd2024.ViewModels;
 using Microsoft.UI.Dispatching;
-using Windows.Media.Core;
 
 namespace ElAd2024.Services;
 
@@ -123,10 +122,9 @@ public partial class ProceedTestService : ObservableRecipient, IProceedTestServi
 
     private async Task CurrentStepChanged()
     {
-        //if (value < Steps.Count)
         if (CurrentStep < AlgorithmSteps?.Count)
         {
-            Func<string?, Task> method = GetMethodAsFunc(AlgorithmSteps[CurrentStep].AlgorithmStep!.Step.AsyncActionName);
+            var method = GetMethodAsFunc(AlgorithmSteps[CurrentStep].AlgorithmStep!.Step.AsyncActionName);
             CurrentTest.TestSteps.Add(
                        new TestStep
                        {
@@ -177,12 +175,12 @@ public partial class ProceedTestService : ObservableRecipient, IProceedTestServi
     {
         if (!int.TryParse(obj, out var duration))
         {
-            throw new ArgumentException("Invalid parameters in function RobotMoveTo()");
+            throw new ArgumentException("Invalid parameters in function GetVideo()");
         }
         await AliveStep();
         var fileName = await AllDevices.MediaDevice.StartRecording($"{CurrentTest.Id:D5}");
         CurrentTest.Videos.Add(new Video { FileName = fileName, Description = obj ?? string.Empty });
-        videoTimer.Change(duration * 1000, 0);
+        videoTimer?.Change(duration * 1000, 0);
     }
 
     private async Task TakeFabric(string? _)
@@ -304,36 +302,18 @@ public partial class ProceedTestService : ObservableRecipient, IProceedTestServi
         await DeadStep();
     }
 
-    private async Task RobotCommand(int position, bool touchSkip)
-    {
-
-        await AllDevices.RobotDevice.SetRegisterAsync(localSettingsService.RobotInPositionRegister, false);
-        await Task.Delay(100);
-        await AllDevices.RobotDevice.SetRegisterAsync(localSettingsService.RobotIsTouchSkipRegister, touchSkip);
-        await AllDevices.RobotDevice.SetRegisterAsync(localSettingsService.RobotGotoPositionRegister, position);
-        await AllDevices.RobotDevice.SetRegisterAsync(localSettingsService.RobotRunRegister, true);
-        robotTimer.Change(robotTimerPeriod, robotTimerPeriod);
-    }
-
-    private async Task RobotMoveTo(string? obj)
+    private async Task RobotMove(string? obj)
     {
         if (!int.TryParse(obj, out var position))
         {
             throw new ArgumentException("Invalid parameters in function RobotMoveTo()");
         }
         await AliveStep($"Moving to\n{position}...");
-        await RobotCommand(position, false);
-    }
 
-    private async Task RobotTouchSkip(string? obj)
-    {
-        if (!int.TryParse(obj, out var position))
-        {
-            throw new ArgumentException("Invalid parameters in function RobotTouchSkip()");
-        }
-
-        await AliveStep($"Touching\nSkip to:\n{position}...");
-        await RobotCommand(position, true);
+        await AllDevices.RobotDevice.SetRegisterAsync(localSettingsService.RobotInPositionRegister, false);
+        await AllDevices.RobotDevice.SetRegisterAsync(localSettingsService.RobotGotoPositionRegister, position);
+        await AllDevices.RobotDevice.SetRegisterAsync(localSettingsService.RobotRunRegister, true);
+        robotTimer?.Change(robotTimerPeriod, robotTimerPeriod);
     }
 
     private async Task Start(object? _)
@@ -357,7 +337,6 @@ public partial class ProceedTestService : ObservableRecipient, IProceedTestServi
         CurrentTest.Phase1Duration = Parameters.DurationPhase1;
         CurrentTest.Phase2Duration = Parameters.DurationPhase2;
         CurrentTest.Phase3Duration = Parameters.DurationPhase3;
-        CurrentTest.DurationPhaseObserving = Parameters.DurationObserving;
         CurrentTest.LoadForce = Parameters.LoadForce;
         CurrentTest.AutoRegulation = Parameters.AutoRegulationHV;
         CurrentTest.IsPlusPolarity = !(((Parameters.Counter - 1) / Parameters.ChangePolarityStep % 2 == 0) ^

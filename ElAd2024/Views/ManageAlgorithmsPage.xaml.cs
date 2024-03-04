@@ -51,12 +51,13 @@ public sealed partial class ManageAlgorithmsPage : Page
 
     }
 
-    private void ListView_DragItemsCompleted(ListViewBase sender, DragItemsCompletedEventArgs args)
+    private async void ListView_DragItemsCompleted(ListViewBase sender, DragItemsCompletedEventArgs args)
     {
         if (sender == TargetListView)
         {
             ViewModel.Reorder();
         }
+        await ViewModel.Save(null);
     }
 
     private void ListView_DragOver(object sender, Microsoft.UI.Xaml.DragEventArgs e)

@@ -62,7 +62,7 @@
                 </NavigationViewItem>
                 <NavigationViewItem x:Uid="Shell_ManageAlgorithms" helpers:NavigationHelper.NavigateTo="ElAd2024.ViewModels.ManageAlgorithmsViewModel">
                     <NavigationViewItem.Icon>
-                        <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xe7c3;"/>
+                        <FontIcon FontFamily="{StaticResource SymbolThemeFontFamily}" Glyph="&#xE787;"/>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
             </NavigationView.MenuItems>

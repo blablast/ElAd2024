@@ -1,12 +1,9 @@
 ﻿using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Globalization;
-using System.Text;
 using CommunityToolkit.Mvvm.ComponentModel;
 using ElAd2024.Contracts.Devices;
 using ElAd2024.Models.Database;
 using Microsoft.UI.Dispatching;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace ElAd2024.Devices.Serial;
 
@@ -17,8 +14,8 @@ public partial class PadDevice : BaseSerialDevice, IPadDevice
     public Queue<string> Commands { get; set; } = [];
 
 
-    [ObservableProperty] private int axisMaxVoltage = +3000;
-    [ObservableProperty] private int axisMinVoltage = -3000;
+    [ObservableProperty] private int axisMaxVoltage = +5000;
+    [ObservableProperty] private int axisMinVoltage = -5000;
     [ObservableProperty] private int elapsed;
     [ObservableProperty] private byte phase;
     [ObservableProperty] private int? value;
@@ -99,16 +96,11 @@ public partial class PadDevice : BaseSerialDevice, IPadDevice
     protected async override Task SendDataAsync(string data)
     {
         Commands.Enqueue(data);
-        if (Commands.Count == 1)
-        {
-           // Debug.WriteLine($" -> ({Commands.Count}): {Commands.Peek()}");
-            await base.SendDataAsync(Commands.Peek());
-        }
+        if (Commands.Count == 1) { await base.SendDataAsync(Commands.Peek()); }
     }
 
     protected async override Task StopDevice()
     {
-        await Task.Delay(100);
         await StopCycle(false);
     }
 
@@ -148,10 +140,8 @@ public partial class PadDevice : BaseSerialDevice, IPadDevice
         else if (Commands.Count > 0)
         {
             var sendNext = false;
-            // Debug.WriteLine($" <- {dataLine}");
             if (dataLine.StartsWith("OK") && dataLine[3..] == Commands.Peek())
             {
-                //Debug.WriteLine($" <- {dataLine}");
                 Commands.Dequeue();
                 sendNext = Commands.Count > 0;
             }
@@ -162,7 +152,6 @@ public partial class PadDevice : BaseSerialDevice, IPadDevice
 
             if (sendNext)
             {
-               // Debug.WriteLine($" -> ({Commands.Count}): {Commands.Peek()}");
                 await base.SendDataAsync(Commands.Peek());
             }
         }

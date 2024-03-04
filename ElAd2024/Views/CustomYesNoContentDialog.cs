@@ -19,7 +19,7 @@ public static class CustomContentDialog
             HorizontalAlignment = HorizontalAlignment.Right,
             FontSize = 24,
             Foreground = new SolidColorBrush(Colors.LightSkyBlue),
-            Margin = new Thickness(0, 0, 10, 0)
+            Margin = new Thickness(0, 0, 10, 20)
         });
        
         var dialog = new ContentDialog
@@ -39,16 +39,18 @@ public static class CustomContentDialog
     {
         var stackPanel = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Stretch };
 
-        stackPanel.Children.Add(new TextBlock { Text = title, VerticalAlignment = VerticalAlignment.Center });
         stackPanel.Children.Add(new TextBlock
         {
             Text = $"\uE946",
             FontFamily = new FontFamily("Segoe MDL2 Assets"),
-            HorizontalAlignment = HorizontalAlignment.Right,
+            HorizontalAlignment = HorizontalAlignment.Left,
             FontSize = 24,
             Foreground = new SolidColorBrush(Colors.LightSkyBlue),
-            Margin = new Thickness(0, 0, 10, 0)
+            Margin = new Thickness(0, 0, 20, 20)
         });
+        
+        stackPanel.Children.Add(new TextBlock { Text = title, VerticalAlignment = VerticalAlignment.Center });
+
 
         var dialog = new ContentDialog
         {

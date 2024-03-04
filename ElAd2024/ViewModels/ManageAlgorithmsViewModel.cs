@@ -1,12 +1,8 @@
 ﻿using System.Collections.ObjectModel;
-using System.Diagnostics;
 using CommunityToolkit.Mvvm.Input;
 using ElAd2024.Contracts.Services;
 using ElAd2024.Models.Database;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.UI.Xaml;
-using Newtonsoft.Json.Linq;
-using Windows.ApplicationModel.Appointments.AppointmentsProvider;
 
 namespace ElAd2024.ViewModels;
 
@@ -18,13 +14,11 @@ public partial class ManageAlgorithmsViewModel : BaseManageViewModel<Algorithm>
     public ObservableCollection<AlgorithmStepViewModel> AvailableAlgorithmSteps { get; set; } = [];
 
 
-    public ManageAlgorithmsViewModel(IDatabaseService databaseService)
-        : base(databaseService, databaseService.Algorithms)
+    public ManageAlgorithmsViewModel(IDatabaseService databaseService) : base(databaseService, databaseService.Algorithms)
     {
         db = databaseService;
 
         allAlgorithms = new ObservableCollection<Algorithm>(db.Algorithms.Include(a => a.AlgorithmSteps).ThenInclude(s => s.Step));
-
         var availableSteps = db.Steps.Where(s => s.IsMoveable == true).ToList();
         availableSteps.ForEach(step => AvailableAlgorithmSteps.Add(new AlgorithmStepViewModel(GetNew(step))));
     }
@@ -44,10 +38,9 @@ public partial class ManageAlgorithmsViewModel : BaseManageViewModel<Algorithm>
         Reorder();
     }
 
-    private AlgorithmStep GetNew(Step step)
+    private static AlgorithmStep GetNew(Step step)
         => new()
         {
-            //Id = SelectedAlgorithmSteps.Count + 10,
             Step = step,
             FrontName = step.AsyncActionName,
             BackName = "Running...",
@@ -107,7 +100,7 @@ public partial class ManageAlgorithmsViewModel : BaseManageViewModel<Algorithm>
     }
 
     [RelayCommand]
-    private async Task Save(object param)
+    public async Task Save(object? param)
     {
         if (Selected is null) { return; }
         var selectedId = Selected.Id;

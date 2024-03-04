@@ -15,6 +15,7 @@ using ElAd2024.Views;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
+using Telerik.UI.Xaml.Controls.DataVisualization.Map;
 
 namespace ElAd2024.ViewModels;
 
@@ -62,7 +63,7 @@ public partial class MainViewModel : ObservableRecipient, IDisposable
             await ProceedTest.InitializeStepsAsync(value.Id);
         }
     }
-    
+
     public ObservableCollection<Batch> Batches { get; set; }
 
     // Devices
@@ -101,9 +102,15 @@ public partial class MainViewModel : ObservableRecipient, IDisposable
         }
         else
         {
-            // TODO: Change to parameters from db
-            if (Parameters.HighVoltagePhase1Hi == 500) Parameters.HighVoltagePhase1Hi = 5000;
-            if (Parameters.HighVoltagePhase3Hi == 500) Parameters.HighVoltagePhase3Hi = 5000;
+            if (Parameters.HighVoltagePhase1Hi == TestParameters.MinHighVoltage)
+            {
+                Parameters.HighVoltagePhase1Hi = TestParameters.MaxHighVoltage;
+            }
+
+            if (Parameters.HighVoltagePhase3Hi == TestParameters.MinHighVoltage)
+            {
+                Parameters.HighVoltagePhase3Hi = TestParameters.MaxHighVoltage;
+            }
         }
         Parameters.Counter = 0;
 
@@ -131,72 +138,9 @@ public partial class MainViewModel : ObservableRecipient, IDisposable
     public async Task InitializeAsync(XamlRoot xamlRoot)
     {
         this.xamlRoot = xamlRoot;
-
-        //(await SerialPortManagerService.GetAvailableSerialPortsAsync()).ForEach(port => AvailablePorts.Add(port));
-
-        //await AllDevices.TemperatureDevice.ConnectAsync(LoadSpi(localSettingsService.EnvDeviceSettings));
-        //if(AllDevices.TemperatureDevice.IsConnected && localSettingsService.Simulate)
-        //{
-        //    AllDevices.HumidityDevice = (HumidityAndTemperatureDevice)AllDevices.TemperatureDevice;
-        //}
-        //else if(localSettingsService.Simulate)
-        //{
-        //    AllDevices.TemperatureDevice = new HumidityAndTemperatureSimulator();
-        //    await AllDevices.TemperatureDevice.ConnectAsync();
-        //    AllDevices.HumidityDevice = (HumidityAndTemperatureSimulator)AllDevices.TemperatureDevice;
-        //}
-
-        //await AllDevices.ScaleDevice.ConnectAsync(LoadSpi(localSettingsService.ScaleDeviceSettings));
-        //scaleTimer.Change(0, 100);
-        //if (!AllDevices.ScaleDevice.IsConnected && localSettingsService.Simulate)
-        //{
-        //    AllDevices.ScaleDevice = new ScaleSimulator();
-        //    await AllDevices.ScaleDevice.ConnectAsync();
-        //    scaleTimer.Change(0, 5000);
-        //}
         scaleTimer.Change(0, AllDevices.ScaleDevice.IsSimulated ? 5000 : 100);
         await Task.CompletedTask;
-        //await AllDevices.PadDevice.ConnectAsync(LoadSpi(localSettingsService.PadDeviceSettings));
-
-        //var allMediaFrameSourceGroups = await AllDevices.MediaDevice.AllMediaFrameSourceGroups();
-        //if (allMediaFrameSourceGroups.Count > 0)
-        //{
-        //    AllDevices.MediaDevice.SelectedMediaFrameSourceGroup = allMediaFrameSourceGroups[AllDevices.MediaDevice.CameraNumber];
-        //    await AllDevices.MediaDevice.ConnectAsync();
-        //}
-
-        //await AllDevices.RobotDevice.ConnectAsync(localSettingsService.RobotIpAddress);
-        //await AllDevices.RobotDevice.InitializeAsync();
-        //if (!AllDevices.RobotDevice.IsConnected && localSettingsService.Simulate)
-        //{
-        //    AllDevices.RobotDevice = new RobotSimulator();
-        //    await AllDevices.RobotDevice.ConnectAsync("simulate");
-        //    await AllDevices.RobotDevice.InitializeAsync();
-        //}
     }
-
-    //private SerialPortInfo LoadSpi(SerialPortInfo? setting)
-    //{
-    //    if (setting is not null)
-    //    {
-    //        try
-    //        {
-    //            var realPort = AvailablePorts.First(spi => spi.PortName == setting.PortName);
-    //            setting.Id = realPort?.Id;
-    //            if (realPort is null)
-    //            {
-    //                setting = null;
-    //            }
-    //        }
-    //        catch (Exception ex)
-    //        {
-    //            Debug.WriteLine(ex.Message);
-    //            setting = null;
-    //        }
-    //    }
-
-    //    return setting ?? new SerialPortInfo();
-    //}
 
 
     private async void ProceedTest_PropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -206,29 +150,24 @@ public partial class MainViewModel : ObservableRecipient, IDisposable
             case nameof(ProceedTest.CurrentStep):
                 return;
             case nameof(ProceedTest.IsRunning) when !ProceedTest.IsRunning:
-            {
-                await db.Context.SaveChangesAsync();
-                if (Parameters.Counter < Parameters.Total)
                 {
-                 //       if (await CustomContentDialog.ShowYesNoQuestionAsync(xamlRoot, "Run tests",
-                 //   $"Do you want to do next test ({Parameters.Counter} of {Parameters.Total}?"))
-                 //       {
-                            await RunNextTest();
-                 //       }
+                    await db.Context.SaveChangesAsync();
+                    if (Parameters.Counter < Parameters.Total)
+                    {
+                        await RunNextTest();
                     }
-                else
-                {
-                    IsTesting = false;
+                    else
+                    {
+                        IsTesting = false;
+                    }
+                    break;
                 }
-
-                break;
-            }
         }
     }
 
     private async Task RunNextTest()
     {
-        await Task.Delay(100);
+        await Task.Delay(100);  // Must be here to avoid running DeadStep before the next test
         ArgumentNullException.ThrowIfNull(Selected);
         ArgumentNullException.ThrowIfNull(SelectedAlgorithm);
 
@@ -327,8 +266,8 @@ public partial class MainViewModel : ObservableRecipient, IDisposable
            && (!ProceedTest?.IsRunning ?? false)
            && Parameters.Total > Parameters.Counter
            && AllDevices.PadDevice.IsConnected == true
-           && (AllDevices.ScaleDevice.IsConnected == true )
-           && (AllDevices.TemperatureDevice.IsConnected == true )
+           && (AllDevices.ScaleDevice.IsConnected == true)
+           && (AllDevices.TemperatureDevice.IsConnected == true)
            && (AllDevices.HumidityDevice.IsConnected == true)
            && (AllDevices.MediaDevice.IsConnected == true || AllDevices.MediaDevice.IsConnected == false)
            && (AllDevices.RobotDevice.IsConnected == true);
@@ -362,6 +301,13 @@ public partial class MainViewModel : ObservableRecipient, IDisposable
         await Task.Delay(5000);
         await AllDevices.MediaDevice.StopRecording();
 
+    }
+
+    [RelayCommand]
+    public async Task SaveParameters()
+    {
+        await localSettingsService.SaveParametersAsync();
+        await CustomContentDialog.ShowInfoAsync(xamlRoot, "Info", $"Parameters saved!");
     }
     #endregion
 }

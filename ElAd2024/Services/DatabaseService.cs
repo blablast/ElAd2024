@@ -32,7 +32,7 @@ public partial class DatabaseService : DbContext, IDatabaseService
     {
         try
         {
-            //await Database.EnsureDeletedAsync();
+            // await Database.EnsureDeletedAsync();
             await Database.EnsureCreatedAsync();
         }
         catch (Exception ex)
@@ -72,8 +72,7 @@ public partial class DatabaseService : DbContext, IDatabaseService
                 new() { AsyncActionName = "Finish", Style = Step.DeviceType.Computer, IsMoveable = false, IsLast = true, IsMandatory = true },
                 new() { AsyncActionName = "GetPhoto", Style = Step.DeviceType.Computer, HasParameter = true },
                 new() { AsyncActionName = "GetWeight", Style = Step.DeviceType.Scale, HasParameter = true },
-                new() { AsyncActionName = "RobotMoveTo", Style = Step.DeviceType.Robot, HasParameter = true, IsNumericParameter = true },
-                new() { AsyncActionName = "RobotTouchSkip", Style = Step.DeviceType.Robot, HasParameter = true, IsNumericParameter = true },
+                new() { AsyncActionName = "RobotMove", Style = Step.DeviceType.Robot, HasParameter = true, IsNumericParameter = true },
                 new() { AsyncActionName = "GetTemperature", Style = Step.DeviceType.Environment },
                 new() { AsyncActionName = "GetHumidity", Style = Step.DeviceType.Environment },
                 new() { AsyncActionName = "GetStatic", Style = Step.DeviceType.Environment },
@@ -118,20 +117,11 @@ public partial class DatabaseService : DbContext, IDatabaseService
 
         dA.AlgorithmSteps.Add(new AlgorithmStep
         {
-            Step = Steps.Single(n => n.AsyncActionName == "RobotMoveTo"),
+            Step = Steps.Single(n => n.AsyncActionName == "RobotMove"),
             Order = dA.AlgorithmSteps.Count,
             FrontName = @"Home",
             BackName = "Moving Pad!",
-            ActionParameter = "100"
-        });
-
-        dA.AlgorithmSteps.Add(new AlgorithmStep
-        {
-            Step = Steps.Single(n => n.AsyncActionName == "RobotMoveTo"),
-            Order = dA.AlgorithmSteps.Count,
-            FrontName = @"PickUp+",
-            BackName = "Moving Pad...",
-            ActionParameter = "12"
+            ActionParameter = "2"
         });
 
         dA.AlgorithmSteps.Add(new AlgorithmStep
@@ -154,11 +144,11 @@ public partial class DatabaseService : DbContext, IDatabaseService
 
         dA.AlgorithmSteps.Add(new AlgorithmStep
         {
-            Step = Steps.Single(n => n.AsyncActionName == "RobotTouchSkip"),
+            Step = Steps.Single(n => n.AsyncActionName == "RobotMove"),
             Order = dA.AlgorithmSteps.Count,
             FrontName = @"PickUp",
             BackName = "Moving Pad...",
-            ActionParameter = "11"
+            ActionParameter = "1"
         });
 
         dA.AlgorithmSteps.Add(new AlgorithmStep
@@ -171,11 +161,11 @@ public partial class DatabaseService : DbContext, IDatabaseService
 
         dA.AlgorithmSteps.Add(new AlgorithmStep
         {
-            Step = Steps.Single(n => n.AsyncActionName == "RobotMoveTo"),
+            Step = Steps.Single(n => n.AsyncActionName == "RobotMove"),
             Order = dA.AlgorithmSteps.Count,
             FrontName = @"PickUp+",
             BackName = "Moving Pad...",
-            ActionParameter = "12"
+            ActionParameter = "2"
         });
 
         dA.AlgorithmSteps.Add(new AlgorithmStep
@@ -185,15 +175,6 @@ public partial class DatabaseService : DbContext, IDatabaseService
             FrontName = @"Weight",
             BackName = "Weighting...",
             ActionParameter = "StackPicked"
-        });
-
-        dA.AlgorithmSteps.Add(new AlgorithmStep
-        {
-            Step = Steps.Single(n => n.AsyncActionName == "RobotMoveTo"),
-            Order = dA.AlgorithmSteps.Count,
-            FrontName = @"Observe",
-            BackName = "Moving Pad...",
-            ActionParameter = "100"
         });
 
         dA.AlgorithmSteps.Add(new AlgorithmStep
@@ -214,32 +195,6 @@ public partial class DatabaseService : DbContext, IDatabaseService
             ActionParameter = "3000"
         });
 
-        dA.AlgorithmSteps.Add(new AlgorithmStep
-        {
-            Step = Steps.Single(n => n.AsyncActionName == "GetWeight"),
-            Order = dA.AlgorithmSteps.Count,
-            FrontName = @"Weight",
-            BackName = "Moving Pad...",
-            ActionParameter = "AfterTime"
-        });
-
-        dA.AlgorithmSteps.Add(new AlgorithmStep
-        {
-            Step = Steps.Single(n => n.AsyncActionName == "RobotMoveTo"),
-            Order = dA.AlgorithmSteps.Count,
-            FrontName = @"Unload+",
-            BackName = "Moving Pad...",
-            ActionParameter = "22"
-        });
-
-        dA.AlgorithmSteps.Add(new AlgorithmStep
-        {
-            Step = Steps.Single(n => n.AsyncActionName == "RobotTouchSkip"),
-            Order = dA.AlgorithmSteps.Count,
-            FrontName = @"Unload",
-            BackName = "Moving Pad...",
-            ActionParameter = "21"
-        });
 
         dA.AlgorithmSteps.Add(new AlgorithmStep
         {
@@ -247,24 +202,6 @@ public partial class DatabaseService : DbContext, IDatabaseService
             Order = dA.AlgorithmSteps.Count,
             FrontName = @"Release",
             BackName = "Releasing up\nfabric..."
-        });
-
-        dA.AlgorithmSteps.Add(new AlgorithmStep
-        {
-            Step = Steps.Single(n => n.AsyncActionName == "RobotMoveTo"),
-            Order = dA.AlgorithmSteps.Count,
-            FrontName = @"Unload+",
-            BackName = "Moving Pad...",
-            ActionParameter = "22"
-        });
-
-        dA.AlgorithmSteps.Add(new AlgorithmStep
-        {
-            Step = Steps.Single(n => n.AsyncActionName == "RobotMoveTo"),
-            Order = dA.AlgorithmSteps.Count,
-            FrontName = @"Home",
-            BackName = "Moving Pad...",
-            ActionParameter = "100"
         });
 
         dA.AlgorithmSteps.Add(new AlgorithmStep
