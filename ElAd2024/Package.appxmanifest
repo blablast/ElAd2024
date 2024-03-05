@@ -12,7 +12,7 @@
 
 	<Identity
 	  Name="ad73b664-8a00-4346-bf21-4207c181a3f4"
-	  Publisher="CN=Błażej Strus"
+	  Publisher="CN=Blazej Strus"
 	  Version="1.0.0.0" />
 
 	<mp:PhoneIdentity PhoneProductId="ad73b664-8a00-4346-bf21-4207c181a3f4" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>

@@ -21,9 +21,8 @@ public partial class LocalSettingsService : ObservableRecipient, ILocalSettingsS
         this.options = options.Value;
 
         // Initialize paths for application data and settings file
-        applicationDataFolder = Path.Combine(LocalApplicationData,
-            this.options.ApplicationDataFolder ?? DefaultApplicationDataFolder);
-        localSettingsFile = this.options.LocalSettingsFile ?? DefaultLocalSettingsFile;
+        ApplicationDataFolder = Path.Combine(LocalApplicationData, this.options.ApplicationDataFolder ?? DefaultApplicationDataFolder);
+        LocalSettingsFile = this.options.LocalSettingsFile ?? DefaultLocalSettingsFile;
 
         settings = [];
     }
@@ -36,10 +35,8 @@ public partial class LocalSettingsService : ObservableRecipient, ILocalSettingsS
     public async Task InitializeAsync()
     {
         isInitialized = true;
-        settings = await Task.Run(() => fileService.Read<Dictionary<string, object>>(applicationDataFolder, localSettingsFile)) ?? [];
+        settings = await Task.Run(() => fileService.Read<Dictionary<string, object>>(ApplicationDataFolder, LocalSettingsFile)) ?? [];
         PicturesFolder = (await StorageLibrary.GetLibraryAsync(KnownLibraryId.Pictures)).SaveFolder.Path;
-
-
         // Load settings for each device and other configuration
         EnvDeviceSettings = await ReadSettingAsync<SerialPortInfo>(nameof(EnvDeviceSettings)) ?? new SerialPortInfo();
         ScaleDeviceSettings = await ReadSettingAsync<SerialPortInfo>(nameof(ScaleDeviceSettings)) ?? new SerialPortInfo();
@@ -48,7 +45,6 @@ public partial class LocalSettingsService : ObservableRecipient, ILocalSettingsS
         RobotGotoPositionRegister = await ReadSettingAsync<int>(nameof(RobotGotoPositionRegister));
         RobotInPositionRegister = await ReadSettingAsync<int>(nameof(RobotInPositionRegister));
         RobotLoadForceRegister = await ReadSettingAsync<int>(nameof(RobotLoadForceRegister));
-        RobotIsTouchSkipRegister = await ReadSettingAsync<int>(nameof(RobotIsTouchSkipRegister));
         RobotRunRegister = await ReadSettingAsync<int>(nameof(RobotRunRegister));
         RobotIpAddress = await ReadSettingAsync<string>(nameof(RobotIpAddress)) ?? string.Empty;
         Parameters = await ReadSettingAsync<TestParameters>(nameof(Parameters)) ?? new TestParameters();
@@ -79,8 +75,8 @@ public partial class LocalSettingsService : ObservableRecipient, ILocalSettingsS
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
     public string PicturesFolder { get; private set; } = string.Empty;
 
-    private readonly string applicationDataFolder;
-    private readonly string localSettingsFile;
+    public string ApplicationDataFolder { get; }
+    public string LocalSettingsFile { get; }
     private Dictionary<string, object> settings;
     private bool isInitialized;
 
@@ -96,7 +92,6 @@ public partial class LocalSettingsService : ObservableRecipient, ILocalSettingsS
     [ObservableProperty] private int robotLoadForceRegister = 2;
     [ObservableProperty] private int robotInPositionRegister = 1;
     [ObservableProperty] private int robotRunRegister = 2;
-    [ObservableProperty] private int robotIsTouchSkipRegister = 3;
     [ObservableProperty] private string? robotIpAddress;
 
     [ObservableProperty] private bool simulate;
@@ -154,7 +149,7 @@ public partial class LocalSettingsService : ObservableRecipient, ILocalSettingsS
             }
 
             settings[key] = await Json.StringifyAsync(value);
-            await Task.Run(() => fileService.Save(applicationDataFolder, localSettingsFile, settings));
+            await Task.Run(() => fileService.Save(ApplicationDataFolder, LocalSettingsFile, settings));
         }
     }
 
@@ -172,16 +167,14 @@ public partial class LocalSettingsService : ObservableRecipient, ILocalSettingsS
 
     #region Helpers
 
-    async partial void OnRobotInPositionRegisterChanged(int value) =>
-        await SaveSettingAsync(nameof(RobotInPositionRegister), value);
-    async partial void OnRobotRunRegisterChanged(int value) =>
-        await SaveSettingAsync(nameof(RobotRunRegister), value);
-    async partial void OnRobotIsTouchSkipRegisterChanged(int value) =>
-        await SaveSettingAsync(nameof(RobotIsTouchSkipRegister), value);
+    async partial void OnRobotInPositionRegisterChanged(int value) 
+        => await SaveSettingAsync(nameof(RobotInPositionRegister), value);
+    async partial void OnRobotRunRegisterChanged(int value) 
+        => await SaveSettingAsync(nameof(RobotRunRegister), value);
     async partial void OnRobotGotoPositionRegisterChanged(int value)
-    => await SaveSettingAsync(nameof(RobotGotoPositionRegister), value);
-    async partial void OnRobotLoadForceRegisterChanged(int value) =>
-        await SaveSettingAsync(nameof(RobotLoadForceRegister), value);
+        => await SaveSettingAsync(nameof(RobotGotoPositionRegister), value);
+    async partial void OnRobotLoadForceRegisterChanged(int value) 
+        => await SaveSettingAsync(nameof(RobotLoadForceRegister), value);
 
 
     async partial void OnSimulateChanged(bool value) => await SaveSettingAsync(nameof(Simulate), value);

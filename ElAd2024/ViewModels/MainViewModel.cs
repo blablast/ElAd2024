@@ -1,6 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Text;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ElAd2024.Contracts.Devices;
@@ -8,10 +9,11 @@ using ElAd2024.Contracts.Services;
 using ElAd2024.Models;
 using ElAd2024.Models.Database;
 using ElAd2024.Services;
-using ElAd2024.Views;
+using ElAd2024.Views.Dialogs;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
+using Telerik.UI.Xaml.Controls.DataVisualization.Map;
 
 namespace ElAd2024.ViewModels;
 
@@ -22,7 +24,6 @@ public partial class MainViewModel : ObservableRecipient, IDisposable
     private readonly IDatabaseService db;
     private readonly ILocalSettingsService localSettingsService;
 
-    private XamlRoot? xamlRoot;
     private readonly DispatcherQueue? dispatcherQueue;
     private readonly Timer scaleTimer;
     private Test testInProgress = new();
@@ -49,7 +50,10 @@ public partial class MainViewModel : ObservableRecipient, IDisposable
     [ObservableProperty] private TestParameters parameters = new();
     [ObservableProperty] private ProceedTestService proceedTest;
     [ObservableProperty] private IAllDevices allDevices;
-    public ObservableCollection<Algorithm> Algorithms { get; set; }
+    public ObservableCollection<Algorithm> Algorithms
+    {
+        get; set;
+    }
     [ObservableProperty] private Algorithm? selectedAlgorithm;
 
     async partial void OnSelectedAlgorithmChanged(Algorithm? value)
@@ -60,7 +64,10 @@ public partial class MainViewModel : ObservableRecipient, IDisposable
         }
     }
 
-    public ObservableCollection<Batch> Batches { get; set; }
+    public ObservableCollection<Batch> Batches
+    {
+        get; set;
+    }
 
     // Devices
     public ObservableCollection<SerialPortInfo> AvailablePorts { get; } = [];
@@ -131,9 +138,8 @@ public partial class MainViewModel : ObservableRecipient, IDisposable
             await AllDevices.ScaleDevice.GetWeight();
         });
 
-    public async Task InitializeAsync(XamlRoot xamlRoot)
+    public async Task InitializeAsync()
     {
-        this.xamlRoot = xamlRoot;
         scaleTimer.Change(0, AllDevices.ScaleDevice.IsSimulated ? 5000 : 100);
         await Task.CompletedTask;
     }
@@ -237,23 +243,28 @@ public partial class MainViewModel : ObservableRecipient, IDisposable
     [RelayCommand]
     public async Task StartTests()
     {
-        if (xamlRoot is not null)
+        Parameters.Counter = 0;
+        if (CanStartTests() && await Dialogs.ShowYesNoQuestionAsync("Run tests", $"Do you want to do {Parameters.Total - Parameters.Counter} tests?"))
         {
-            Parameters.Counter = 0;
-            if (CanStartTests() && await CustomContentDialog.ShowYesNoQuestionAsync(xamlRoot, "Run tests",
-                    $"Do you want to do {Parameters.Total - Parameters.Counter} tests?"))
+            if (SelectedAlgorithm is not null)
             {
-                if (SelectedAlgorithm is not null)
-                {
-                    await ProceedTest.InitializeStepsAsync(SelectedAlgorithm.Id);
-                    await RunNextTest();
-                }
+                await ProceedTest.InitializeStepsAsync(SelectedAlgorithm.Id);
+                await RunNextTest();
             }
         }
         else
         {
-            await CustomContentDialog.ShowInfoAsync(xamlRoot, "Error",
-                $"Please check if all devices are connected and selected batch is not null, and weight is not 0!\nxamlRoot: {xamlRoot is not null}\nSelected: {Selected is not null}");
+            var sb = new StringBuilder();
+#pragma warning disable IDE0011 // Dodaj nawiasy klamrowe
+            if (!AllDevices.PadDevice.IsConnected) sb.AppendLine("Pad device is not connected.");
+            if (!AllDevices.ScaleDevice.IsConnected) sb.AppendLine("Scale device is not connected.");
+            if (!AllDevices.TemperatureDevice.IsConnected) sb.AppendLine("Temperature device is not connected.");
+            if (!AllDevices.HumidityDevice.IsConnected) sb.AppendLine("Humidity device is not connected.");
+            if (!AllDevices.MediaDevice.IsConnected) sb.AppendLine("Camera is not connected.");
+            if (!AllDevices.RobotDevice.IsConnected) sb.AppendLine("Robot is not connected.");
+            if (ProceedTest.IsRunning) sb.AppendLine("Test is already running.");
+#pragma warning restore IDE0011 // Dodaj nawiasy klamrowe
+            await Dialogs.ShowInfoAsync("Error", sb.ToString());
         }
     }
 
@@ -303,7 +314,7 @@ public partial class MainViewModel : ObservableRecipient, IDisposable
     public async Task SaveParameters()
     {
         await localSettingsService.SaveParametersAsync();
-        await CustomContentDialog.ShowInfoAsync(xamlRoot, "Info", $"Parameters saved!");
+        await Dialogs.ShowInfoAsync("Info", $"Parameters saved!");
     }
     #endregion
 }

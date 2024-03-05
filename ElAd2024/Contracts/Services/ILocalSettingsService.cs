@@ -6,6 +6,9 @@ namespace ElAd2024.Contracts.Services;
 
 public interface ILocalSettingsService
 {
+    string ApplicationDataFolder { get; }
+    string LocalSettingsFile { get; }
+
 
     SerialPortInfo EnvDeviceSettings { get; set; }
     SerialPortInfo PadDeviceSettings { get; set; }
@@ -13,7 +16,6 @@ public interface ILocalSettingsService
     int RobotGotoPositionRegister  { get; set; }
     int RobotInPositionRegister { get; set; }
     string RobotIpAddress { get; set; }
-    int RobotIsTouchSkipRegister { get; set; }
     int RobotLoadForceRegister { get; set; }
     int RobotRunRegister { get; set; }
     bool Simulate { get; set; }

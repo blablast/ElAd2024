@@ -1,15 +1,8 @@
-﻿using System.Diagnostics;
-using CommunityToolkit.Mvvm.ComponentModel;
-using ElAd2024.Models.Database;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using ElAd2024.ViewModels;
-using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Media;
-using Telerik.UI.Xaml.Controls.Navigation;
 using Telerik.UI.Xaml.Controls.Primitives;
-
 
 namespace ElAd2024.Views;
 
@@ -17,30 +10,18 @@ namespace ElAd2024.Views;
 public sealed partial class TestResultsPage : Page
 {
     private RadSideDrawer radSideDrawer = new();
-    public TestResultsViewModel ViewModel
-    {
-        get;
-    }
+    public TestResultsViewModel ViewModel { get; }
 
     public TestResultsPage()
     {
         ViewModel = App.GetService<TestResultsViewModel>();
         InitializeComponent();
-
         Loaded += OnLoaded;
         Unloaded += OnUnloaded;
 
     }
-
-    private void OnLoaded(object sender, RoutedEventArgs e)
-    {
-        ViewModel.PropertyChanged += ViewModel_PropertyChanged;
-    }
-
-    private void OnUnloaded(object sender, RoutedEventArgs e)
-    {
-        ViewModel.PropertyChanged -= ViewModel_PropertyChanged;
-    }
+    private void OnLoaded(object sender, RoutedEventArgs e) => ViewModel.PropertyChanged += ViewModel_PropertyChanged;
+    private void OnUnloaded(object sender, RoutedEventArgs e) => ViewModel.PropertyChanged -= ViewModel_PropertyChanged;
 
 
     private void ViewModel_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
@@ -56,11 +37,7 @@ public sealed partial class TestResultsPage : Page
             PopupImage.Source = imageElement.Source;
             StandardPopup.Width = MainContent.ActualWidth;
             StandardPopup.Height = MainContent.ActualHeight;
-            if (!StandardPopup.IsOpen)
-            {
-                StandardPopup.IsOpen = true;
-
-            }
+            StandardPopup.IsOpen = true;
         }
     }
 
@@ -73,7 +50,7 @@ public sealed partial class TestResultsPage : Page
 
     private void RadSideDrawer_DrawerOpening(object sender, EventArgs e)
     {
-        if (StandardPopup.IsOpen) { StandardPopup.IsOpen = false; }
+        StandardPopup.IsOpen = false;
         MainContent.Margin = new Thickness(224, 0, 0, 0); // Push content to the right
     }
 
@@ -91,8 +68,5 @@ public sealed partial class TestResultsPage : Page
         }
     }
 
-    private void ClosePopupClicked(object sender, RoutedEventArgs e)
-    {
-        if (StandardPopup.IsOpen) { StandardPopup.IsOpen = false; }
-    }
+    private void ClosePopupClicked(object sender, RoutedEventArgs e) => StandardPopup.IsOpen = false;
 }

@@ -19,15 +19,8 @@ public sealed partial class ManageAlgorithmsPage : Page
     {
         ViewModel = App.GetService<ManageAlgorithmsViewModel>();
         InitializeComponent();
-        Loaded += OnLoaded;
-        Unloaded += OnUnloaded;
     }
 
-    private async void OnLoaded(object sender, RoutedEventArgs e)
-        => await ViewModel.InitializeAsync(XamlRoot);
-
-    private void OnUnloaded(object sender, RoutedEventArgs e)
-        => Loaded -= OnLoaded;
 
     private void ListView_DragItemsStarting(object sender, DragItemsStartingEventArgs e)
     {

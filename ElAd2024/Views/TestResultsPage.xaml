@@ -271,8 +271,9 @@
         </telerikPrimitives:RadSideDrawer.MainContent>
         <telerikPrimitives:RadSideDrawer.DrawerContent>
             <StackPanel VerticalAlignment="Top" Width="200">
+                <Button Content="ZIP data" Command="{x:Bind ViewModel.ZipFilesCommand}" HorizontalAlignment="Stretch" Margin="0 0 0 12" Style="{StaticResource AccentButtonStyle}"/>
                 <Button Click="ViewButton_Click" Content="Change View" HorizontalAlignment="Stretch" Margin="0 0 0 12" Style="{StaticResource AccentButtonStyle}"/>
-
+                
                 <ListView
                   Header="Batches"
                   ItemsSource="{x:Bind ViewModel.Batches, Mode=OneWay}"

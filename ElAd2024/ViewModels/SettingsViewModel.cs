@@ -4,10 +4,11 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ElAd2024.Contracts.Devices;
 using ElAd2024.Contracts.Services;
+using ElAd2024.Helpers;
 using ElAd2024.Helpers.General;
 using ElAd2024.Models;
 using ElAd2024.Services;
-using ElAd2024.Views;
+using ElAd2024.Views.Dialogs;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 
@@ -17,7 +18,6 @@ public partial class SettingsViewModel : ObservableRecipient, IDisposable
 {
     #region Fields
     private readonly IThemeSelectorService themeSelectorService;
-    private XamlRoot? xamlRoot;
     private readonly DispatcherQueue dispatcherQueue;
 
     private readonly Timer timerAvailablePorts;
@@ -72,9 +72,8 @@ public partial class SettingsViewModel : ObservableRecipient, IDisposable
     #endregion
 
     #region Public Methods
-    public async Task InitializeAsync(XamlRoot? xamlRoot)
+    public async Task InitializeAsync()
     {
-        this.xamlRoot = xamlRoot;
         await LoadAvailableSerialPortsAndInitializeSettings();
         await Task.CompletedTask;
     }
@@ -137,13 +136,18 @@ public partial class SettingsViewModel : ObservableRecipient, IDisposable
     [RelayCommand]
     private async Task ResetSettings()
     {
-        if (await CustomContentDialog.ShowYesNoQuestionAsync(xamlRoot, "Delete Database",
-                    $"Do you really want to remove database and recreate it (all data will be lost)?"))
+        if (await Dialogs.ShowYesNoQuestionAsync("Delete Database", $"Do you really want to remove database and recreate it (all data will be lost)?"))
         {
             await databaseService.Context.Database.EnsureDeletedAsync();
             await databaseService.Context.Database.EnsureCreatedAsync();
             //await localSettingsService.ResetAsync();
         }
+    }
+
+    [RelayCommand]
+    private async Task OpenDBFolder()
+    {
+        await FilesAndFolders.OpenFolderAsync(LocalSettingsService.ApplicationDataFolder);
     }
 
     public void Dispose()

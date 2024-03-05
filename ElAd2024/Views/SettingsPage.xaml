@@ -146,10 +146,6 @@
                            Value="{x:Bind  ViewModel.LocalSettingsService.RobotLoadForceRegister, Mode=TwoWay}"
                            Style="{StaticResource RobotRegisterNumberBoxStyle}"/>
 
-                <NumberBox Header="Is TouchSkip Flag Reg:"
-                           Value="{x:Bind  ViewModel.LocalSettingsService.RobotIsTouchSkipRegister, Mode=TwoWay}"
-                           Style="{StaticResource RobotRegisterNumberBoxStyle}"/>
-
                 <NumberBox Header="Run Flag Reg:"
                            Value="{x:Bind  ViewModel.LocalSettingsService.RobotRunRegister, Mode=TwoWay}"
                            Style="{StaticResource RobotRegisterNumberBoxStyle}"/>
@@ -190,6 +186,7 @@
                 <Button Content="Save serial port settings" Margin="{StaticResource XSmallTopMargin}" Command="{x:Bind ViewModel.SaveSettingsCommand}" Style="{StaticResource AccentButtonStyle}" HorizontalAlignment="Right"/>
 
             </StackPanel>
+            <Button Content="Open DB Folder" Margin="{StaticResource XSmallTopMargin}" Command="{x:Bind ViewModel.OpenDBFolderCommand}" Style="{StaticResource AccentButtonStyle}" HorizontalAlignment="Left"/>
             <Button Content="Reset to default" Margin="{StaticResource XSmallTopMargin}" Command="{x:Bind ViewModel.ResetSettingsCommand}" Style="{StaticResource AccentButtonStyle}" HorizontalAlignment="Left"/>
             <StackPanel Margin="{StaticResource SmallTopBottomMargin}">
                 <TextBlock x:Uid="Settings_Theme" />

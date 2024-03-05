@@ -3,7 +3,7 @@ using System.Diagnostics;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ElAd2024.Contracts.Services;
-using ElAd2024.Views;
+using ElAd2024.Views.Dialogs;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.UI.Xaml;
 using Telerik.UI.Xaml.Controls.Grid;
@@ -12,7 +12,6 @@ namespace ElAd2024.ViewModels;
 public abstract partial class BaseManageViewModel<T> : ObservableRecipient, IDisposable where T : class, new()
 {
     private readonly IDatabaseService db;
-    private XamlRoot? xamlRoot;
     private readonly DbSet<T> dbSet;
 
     [NotifyCanExecuteChangedForAttribute(nameof(DeleteCommand))]
@@ -36,13 +35,6 @@ public abstract partial class BaseManageViewModel<T> : ObservableRecipient, IDis
         Items = new ObservableCollection<T>(dbSet);
         Exists = Items.Any();
     }
-
-    public async Task InitializeAsync(XamlRoot xamlRoot)
-    {
-        this.xamlRoot = xamlRoot;
-        await Task.CompletedTask;
-    }
-
 
     public virtual void Dispose() => GC.SuppressFinalize(this);
 
@@ -70,9 +62,7 @@ public abstract partial class BaseManageViewModel<T> : ObservableRecipient, IDis
     private async Task Delete()
     {
         if (Selected is not null
-            && xamlRoot is not null
-            && await CustomContentDialog.ShowYesNoQuestionAsync(xamlRoot, "Delete",
-                "Do you want to delete selected?"))
+            && await Dialogs.ShowYesNoQuestionAsync("Delete", "Do you want to delete selected?"))
         {
             dbSet.Remove(Selected);
             await db.Context.SaveChangesAsync();

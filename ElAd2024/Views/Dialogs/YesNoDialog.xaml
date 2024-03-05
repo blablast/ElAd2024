@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ContentDialog
+    x:Class="ElAd2024.Views.Dialogs.YesNoDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="{x:Bind TitleText}"
+    Content="{x:Bind ContentText}"
+    PrimaryButtonText = "Yes"
+    CloseButtonText="No"
+    DefaultButton="Primary">
+    <ContentDialog.TitleTemplate>
+        <DataTemplate>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Stretch">
+                <TextBlock
+                        Text="&#xE9C9;"
+                        FontFamily="Segoe MDL2 Assets"
+                        HorizontalAlignment="Left"
+                        FontSize="24"
+                        Foreground="LightSkyBlue"
+                        Margin="0 0 20 0" />
+                <TextBlock
+                        Text="{Binding}"
+                        VerticalAlignment="Center" />
+            </StackPanel>
+        </DataTemplate>
+    </ContentDialog.TitleTemplate>
+</ContentDialog>

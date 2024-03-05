@@ -14,7 +14,7 @@ public sealed partial class SettingsPage : Page
         Loaded += OnLoaded;
         Unloaded += OnUnloaded;
     }
-    private async void OnLoaded(object sender, RoutedEventArgs e) => await ViewModel.InitializeAsync(XamlRoot);
+    private async void OnLoaded(object sender, RoutedEventArgs e) => await ViewModel.InitializeAsync();
 
     private void OnUnloaded(object sender, RoutedEventArgs e) => ViewModel.Dispose();
 }

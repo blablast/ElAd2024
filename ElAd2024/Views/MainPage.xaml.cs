@@ -43,7 +43,7 @@ public sealed partial class MainPage : Page
     }
     private async void OnLoaded(object sender, RoutedEventArgs e)
     {
-        await ViewModel.InitializeAsync(XamlRoot);
+        await ViewModel.InitializeAsync();
         ArgumentNullException.ThrowIfNull(ViewModel.AllDevices.PadDevice);
         ViewModel.AllDevices.PadDevice.Voltages.CollectionChanged += OnVoltagesChartDataCollectionChanged;
         if (ViewModel.AllDevices.MediaDevice.SelectedMediaFrameSourceGroup is not null)
