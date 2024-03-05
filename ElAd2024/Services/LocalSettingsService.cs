@@ -37,8 +37,8 @@ public partial class LocalSettingsService : ObservableRecipient, ILocalSettingsS
     {
         isInitialized = true;
         settings = await Task.Run(() => fileService.Read<Dictionary<string, object>>(applicationDataFolder, localSettingsFile)) ?? [];
-
         PicturesFolder = (await StorageLibrary.GetLibraryAsync(KnownLibraryId.Pictures)).SaveFolder.Path;
+
 
         // Load settings for each device and other configuration
         EnvDeviceSettings = await ReadSettingAsync<SerialPortInfo>(nameof(EnvDeviceSettings)) ?? new SerialPortInfo();
@@ -77,10 +77,7 @@ public partial class LocalSettingsService : ObservableRecipient, ILocalSettingsS
 
     public readonly string LocalApplicationData =
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-    public string PicturesFolder
-    {
-        get; private set;
-    }
+    public string PicturesFolder { get; private set; } = string.Empty;
 
     private readonly string applicationDataFolder;
     private readonly string localSettingsFile;

@@ -7,6 +7,7 @@
 	xmlns:telerikGrid="using:Telerik.UI.Xaml.Controls.Grid"
     xmlns:telerikLocal="using:ElAd2024.Telerik"
     xmlns:viewModel="using:ElAd2024.ViewModels"
+    xmlns:modelsDB="using:ElAd2024.Models.Database"
     mc:Ignorable="d"
     >
     <Page.Resources>
@@ -36,6 +37,16 @@
             </Border>
         </DataTemplate>
 
+
+        <DataTemplate x:Key="AlgorithmsSource" x:DataType="modelsDB:Algorithm">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="{x:Bind Id}" Style="{StaticResource TileTextBlock}" Margin=" 0 6 12 0" Width="50"/>
+                <TextBlock Text="{x:Bind Name}" Style="{StaticResource TileTextBlock}"  Margin=" 0 6 12 0" Width="300" HorizontalTextAlignment="Left" HorizontalAlignment="Left"/>
+                <CheckBox IsChecked="{x:Bind IsBaseAlgorithm}" Content="" IsEnabled="False" />
+            </StackPanel>
+        </DataTemplate>
+        
+        
         <DataTemplate x:Key="AlgorithmStepTemplate" x:DataType="viewModel:AlgorithmStepViewModel">
             <Border Width="160" Height="150" Margin="-15 10 0 0" CornerRadius="20" Background="{x:Bind Background, Mode=OneWay}">
                 <Canvas>
@@ -101,23 +112,11 @@
                     Style="{StaticResource AccentButtonStyle}"
                 />
                 </StackPanel>
-                <telerikGrid:RadDataGrid Margin="0 20 0 0"
-                AutoGenerateColumns="False"
-                ItemsSource="{x:Bind ViewModel.Items, Mode=TwoWay}"
-                SelectedItem="{x:Bind ViewModel.Selected, Mode=TwoWay}"
-                UserGroupMode="Disabled"
-                IndentWidth="50">
-                    <telerikGrid:RadDataGrid.Commands>
-                        <telerikLocal:CustomTelerikDataGridCommand Id="CommitEdit" Command="{x:Bind ViewModel.CommitEditCommand}" />
-                        <telerikLocal:CustomTelerikDataGridCommand Id="CellTap" Command="{x:Bind ViewModel.CellTapCommand}" />
-                    </telerikGrid:RadDataGrid.Commands>
-                    <telerikGrid:RadDataGrid.Columns>
-                        <telerikGrid:DataGridTextColumn PropertyName="Id" CanUserEdit="False"/>
-                        <telerikGrid:DataGridTextColumn PropertyName="Name"/>
-                        <telerikGrid:DataGridTextColumn PropertyName="Description"/>
-                        <telerikGrid:DataGridBooleanColumn PropertyName="IsBaseAlgorithm" CanUserEdit="False"/>
-                    </telerikGrid:RadDataGrid.Columns>
-                </telerikGrid:RadDataGrid>
+                <ListView 
+                    Margin="0 24"
+                    ItemsSource="{x:Bind ViewModel.Items, Mode=TwoWay}"
+                    SelectedItem="{x:Bind ViewModel.Selected, Mode=TwoWay}"
+                    ItemTemplate="{StaticResource AlgorithmsSource}"></ListView>
 
                 <ListView 
                 ItemsSource="{x:Bind ViewModel.AvailableAlgorithmSteps, Mode=TwoWay}" 

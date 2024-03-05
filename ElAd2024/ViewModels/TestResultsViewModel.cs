@@ -6,16 +6,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ElAd2024.ViewModels;
 
-public partial class TestResultsViewModel : ObservableRecipient
+public partial class TestResultsViewModel(IDatabaseService databaseService) : ObservableRecipient
 {
     [ObservableProperty] private Batch? selected;
     [ObservableProperty] private Test? selectedTest;
 
-    private readonly ObservableCollection<Batch> batches;
-
-    public TestResultsViewModel(IDatabaseService databaseService)
-    {
-        batches = new(
+    public readonly ObservableCollection<Batch> Batches = new(
         databaseService
             .Batches
             .Include(batch => batch.Tests)
@@ -29,7 +25,4 @@ public partial class TestResultsViewModel : ObservableRecipient
             .Include(batch => batch.Tests)
             .ThenInclude(test => test.Temperatures)
             );
-    }
-
-    public ObservableCollection<Batch> Batches => batches;
 }

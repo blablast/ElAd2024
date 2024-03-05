@@ -195,32 +195,32 @@
                                     </StackPanel>
                                 </StackPanel>
                                 <StackPanel Width="282">
-                                    <CheckBox IsChecked="{x:Bind ViewModel.Parameters.AutoRegulationHV, Mode=TwoWay}" Margin="20 18 0 0">Auto regulation HV</CheckBox>
+                                    <CheckBox IsChecked="{x:Bind ViewModel.Parameters.AutoRegulationHV, Mode=TwoWay}" Margin="0">Auto regulation HV</CheckBox>
                                     <NumberBox Header="Autoregulation step:" Value="{x:Bind ViewModel.Parameters.AutoRegulationStep, Mode=TwoWay}" Minimum="0" Maximum="2000" Style="{StaticResource NumberBoxStyle}" Margin="0 0 0 0 "/>
                                     <StackPanel Orientation="Horizontal">
-                                        <NumberBox Width="135" Header="Max correction: UP" Value="{x:Bind ViewModel.Parameters.AutoRegulationMaxCorrectionUp, Mode=TwoWay}" Minimum="0" Maximum="2000" Style="{StaticResource NumberBoxStyle}" Margin="0 12 0 0 "/>
-                                        <NumberBox Width="135" Header="DOWN" Value="{x:Bind ViewModel.Parameters.AutoRegulationMaxCorrectionDown, Mode=TwoWay}" Minimum="0" Maximum="2000" Style="{StaticResource NumberBoxStyle}" Margin="12 12 0 0 "/>
+                                        <NumberBox Width="135" Header="Max correction: UP" Value="{x:Bind ViewModel.Parameters.AutoRegulationMaxCorrectionUp, Mode=TwoWay}" Minimum="0" Maximum="2000" Style="{StaticResource NumberBoxStyle}" Margin="0 18 0 0 "/>
+                                        <NumberBox Width="135" Header="DOWN" Value="{x:Bind ViewModel.Parameters.AutoRegulationMaxCorrectionDown, Mode=TwoWay}" Minimum="0" Maximum="2000" Style="{StaticResource NumberBoxStyle}" Margin="12 18 0 0 "/>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal">
-                                        <NumberBox Width="135" Header="Delay before: Phase 1" Value="{x:Bind ViewModel.Parameters.AutoRegulationDelayPhase1, Mode=TwoWay}" Minimum="0" Maximum="9900" Style="{StaticResource NumberBoxStyle}" Margin="0 12 0 0 "/>
-                                        <NumberBox Width="135" Header="Phase 3" Value="{x:Bind ViewModel.Parameters.AutoRegulationDelayPhase3, Mode=TwoWay}" Minimum="0" Maximum="9900" Style="{StaticResource NumberBoxStyle}" Margin="12 12 0 0 "/>
+                                        <NumberBox Width="135" Header="Delay before: Phase 1" Value="{x:Bind ViewModel.Parameters.AutoRegulationDelayPhase1, Mode=TwoWay}" Minimum="0" Maximum="9900" Style="{StaticResource NumberBoxStyle}" Margin="0 18 0 0 "/>
+                                        <NumberBox Width="135" Header="Phase 3" Value="{x:Bind ViewModel.Parameters.AutoRegulationDelayPhase3, Mode=TwoWay}" Minimum="0" Maximum="9900" Style="{StaticResource NumberBoxStyle}" Margin="12 18 0 0 "/>
                                     </StackPanel>
 
-                                    <Button Content="Save Parameters" HorizontalAlignment="Stretch" Margin="0 32 0 0" Style="{StaticResource AccentButtonStyle}"
+                                    <Button Content="Save Parameters" HorizontalAlignment="Center" Margin="0 38 0 0" Style="{StaticResource AccentButtonStyle}"
                         Command="{x:Bind ViewModel.SaveParametersCommand}" />
                                 </StackPanel>
-                                <StackPanel HorizontalAlignment="Stretch" Margin="60 0 0 0 ">
+                                <StackPanel HorizontalAlignment="Stretch" Margin="{StaticResource SmallLeftRightMargin}">
                                     <Button Width="200" Content="Pad Start" HorizontalAlignment="Stretch" Margin="0 10 0 0" Style="{StaticResource AccentButtonStyle}" Foreground="White" Background="DarkRed"
                         Command="{x:Bind ViewModel.PadStartCommand}" />
-                                    <Button Width="200" Content="Pad Stop" HorizontalAlignment="Stretch" Margin="0 10 0 0" Style="{StaticResource AccentButtonStyle}" Foreground="White" Background="DarkRed"
+                                    <Button Width="200" Content="Pad Stop" HorizontalAlignment="Stretch" Margin="0 18 0 0" Style="{StaticResource AccentButtonStyle}" Foreground="White" Background="DarkRed"
                         Command="{x:Bind ViewModel.PadStopCommand}" />
-                                    <ComboBox Header="Alghorithm" HorizontalAlignment="Stretch" ItemsSource="{x:Bind ViewModel.Algorithms, Mode=OneWay}" ItemTemplate="{StaticResource AlghorithmTemplate}" SelectedItem="{x:Bind ViewModel.SelectedAlgorithm, Mode=TwoWay}"/>
-                                    <NumberBox Header="Number of tests:" Value="{x:Bind ViewModel.Parameters.Total, Mode=TwoWay}" SmallChange="1" Minimum="1" Maximum="100" Style="{StaticResource NumberBoxStyle}" Margin="0 9 0 0" />
-                                    <Button Width="200" Content="Start Tests" HorizontalAlignment="Stretch" Margin="0 40 0 0" Style="{StaticResource AccentButtonStyle}"
+                                    <ComboBox Header="Alghorithm:" HorizontalAlignment="Stretch" ItemsSource="{x:Bind ViewModel.Algorithms, Mode=OneWay}" ItemTemplate="{StaticResource AlghorithmTemplate}" SelectedItem="{x:Bind ViewModel.SelectedAlgorithm, Mode=TwoWay}" Margin="0 16 0 0 "/>
+                                    <NumberBox Header="Number of tests:" Value="{x:Bind ViewModel.Parameters.Total, Mode=TwoWay}" SmallChange="1" Minimum="1" Maximum="100" Style="{StaticResource NumberBoxStyle}" Margin="0 18 0 0" />
+                                    <Button Width="200" Content="Start Tests" HorizontalAlignment="Stretch" Margin="0 38 0 0" Style="{StaticResource AccentButtonStyle}"
                         Command="{x:Bind ViewModel.StartTestsCommand}" />
                                 </StackPanel>
                             </StackPanel>
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="20 0 0 0">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="{StaticResource SmallLeftRightMargin}">
                                 <ListView ItemsSource="{x:Bind ViewModel.ProceedTest.AlgorithmSteps, Mode=OneWay}" ItemTemplate="{StaticResource AlgorithmStepTemplate}"
                           HorizontalAlignment="Stretch" VerticalAlignment="Top" HorizontalContentAlignment="Stretch"
                           ScrollViewer.HorizontalScrollMode="Enabled" ScrollViewer.HorizontalScrollBarVisibility="Hidden">

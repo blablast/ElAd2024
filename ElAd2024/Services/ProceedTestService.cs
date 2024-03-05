@@ -296,7 +296,8 @@ public partial class ProceedTestService : ObservableRecipient, IProceedTestServi
     private async Task ReleaseFabric(string? _)
     {
         await AliveStep();
-        await AllDevices.PadDevice.ReleaseFabric(CurrentTest.IsPlusPolarity);
+        await AllDevices.PadDevice.StopCycle();
+        await AllDevices.PadDevice.ReleaseFabric();
         await DeadStep();
     }
 

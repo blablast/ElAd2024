@@ -231,7 +231,7 @@ public partial class MainViewModel : ObservableRecipient, IDisposable
     public async Task PadStopAsync()
     {
         ArgumentNullException.ThrowIfNull(AllDevices.PadDevice);
-        await AllDevices.PadDevice.StopCycle(false);
+        await AllDevices.PadDevice.StopCycle();
     }
 
     [RelayCommand]

@@ -1,6 +1,9 @@
 ﻿using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Diagnostics;
 using CommunityToolkit.Mvvm.Input;
 using ElAd2024.Contracts.Services;
+using ElAd2024.Helpers;
 using ElAd2024.Models.Database;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,7 +13,8 @@ public partial class ManageAlgorithmsViewModel : BaseManageViewModel<Algorithm>
 {
     private readonly IDatabaseService db;
     private ObservableCollection<Algorithm> allAlgorithms;
-    public ObservableCollection<AlgorithmStepViewModel> SelectedAlgorithmSteps { get; set; } = [];
+    public ObservableCollectionNotifyPropertyChange<AlgorithmStepViewModel> SelectedAlgorithmSteps { get; set; } = [];
+
     public ObservableCollection<AlgorithmStepViewModel> AvailableAlgorithmSteps { get; set; } = [];
 
 
@@ -22,6 +26,10 @@ public partial class ManageAlgorithmsViewModel : BaseManageViewModel<Algorithm>
         var availableSteps = db.Steps.Where(s => s.IsMoveable == true).ToList();
         availableSteps.ForEach(step => AvailableAlgorithmSteps.Add(new AlgorithmStepViewModel(GetNew(step))));
     }
+
+    private async void OnSelectedAlgorithmStepsDataChanged(object? sender, PropertyChangedEventArgs e)
+        => await Save(null);
+
 
     public void AddAvailableStep(int stepId, int index)
     {
@@ -53,6 +61,7 @@ public partial class ManageAlgorithmsViewModel : BaseManageViewModel<Algorithm>
         var mandatorySteps = db.Steps.Where(s => s.IsMandatory == true).ToList();
         var record = db.Algorithms.Single(a => a.Id == newItem.Id);
         mandatorySteps.ForEach(step => record.AlgorithmSteps.Add(GetNew(step)));
+        newItem.Name = $"Algorithm #{allAlgorithms.Count}";
         await db.Context.SaveChangesAsync();
 
         allAlgorithms = new ObservableCollection<Algorithm>(db.Algorithms.Include(a => a.AlgorithmSteps).ThenInclude(s => s.Step));
@@ -62,9 +71,11 @@ public partial class ManageAlgorithmsViewModel : BaseManageViewModel<Algorithm>
     protected override void SelectedChanged(Algorithm? value)
     {
         base.SelectedChanged(value);
+        SelectedAlgorithmSteps?.Stop();
+
         if (value is not null)
         {
-            SelectedAlgorithmSteps.Clear();
+            SelectedAlgorithmSteps!.Clear();
             var current = allAlgorithms.Single(a => a.Id == value.Id).AlgorithmSteps.OrderBy(a => a.Order);
 
             foreach (var step in current)
@@ -73,7 +84,10 @@ public partial class ManageAlgorithmsViewModel : BaseManageViewModel<Algorithm>
             }
             Reorder();
             IsSelected = true;
+            SelectedAlgorithmSteps.Start(OnSelectedAlgorithmStepsDataChanged);
         }
+
+        CanDelete = EnsureCanDelete();
     }
     protected override bool EnsureCanDelete() => Selected?.Id > 1;
 
@@ -123,6 +137,8 @@ public partial class ManageAlgorithmsViewModel : BaseManageViewModel<Algorithm>
         await db.Context.SaveChangesAsync();
         allAlgorithms = new ObservableCollection<Algorithm>(db.Algorithms.Include(a => a.AlgorithmSteps).ThenInclude(s => s.Step));
         Selected = allAlgorithms.Single(a => a.Id == selectedId);
+
+        Debug.WriteLine("Alghorithm Saved");
     }
 
 }

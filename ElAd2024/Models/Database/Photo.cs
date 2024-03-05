@@ -11,5 +11,5 @@ public class Photo : TestChildBaseTable
     [NotMapped]
     private readonly ImageToFullPathConverter converter = new();
     [NotMapped]
-    public string? ImageSource => converter.Convert(FileName, typeof(string), null, string.Empty)?.ToString();
+    public string? ImageSource => converter.Convert(FileName, typeof(string), new object(), string.Empty)?.ToString();
 }

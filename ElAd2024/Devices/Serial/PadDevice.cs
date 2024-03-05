@@ -66,26 +66,22 @@ public partial class PadDevice : BaseSerialDevice, IPadDevice
         });
     }
 
-    public async Task StopCycle(bool trimData)
+    public async Task StopCycle()
     {
-        
-        if (trimData)
-        {
-            dispatcherQueue.TryEnqueue(() =>
-            {
-                var itemsToRemove = Voltages.Where(v => v.Phase == 0).ToList();
-                foreach (var item in itemsToRemove)
-                {
-                    Voltages.Remove(item);
-                }
-            });
-        }
         await SendDataAsync("PUS DRP");
     }
 
-    public async Task ReleaseFabric(bool isPlusPolarity)
+    public async Task ReleaseFabric()
     {
-        await SendDataAsync("PUS DRP");
+        dispatcherQueue.TryEnqueue(() =>
+        {
+            var itemsToRemove = Voltages.Where(v => v.Phase == 0).ToList();
+            foreach (var item in itemsToRemove)
+            {
+                Voltages.Remove(item);
+            }
+        });
+        await Task.CompletedTask;
     }
 
 
@@ -94,11 +90,12 @@ public partial class PadDevice : BaseSerialDevice, IPadDevice
         dispatcherQueue.TryEnqueue(() =>
         {
             Voltages.Clear();
-            for (var i = 0; i < dataCollectionSize; i++)
+            Voltages.Add(new Voltage { Elapsed = 0, Phase = 1 });
+            index = 1;
+            for (var i = index; i < dataCollectionSize; i++)
             {
-                Voltages.Add(new Voltage { Elapsed = i - dataCollectionSize + 1, Phase = 0 });
+                Voltages.Add(new Voltage { Elapsed = i, Phase = 0 });
             }
-            index = 0;
         });
 
     protected async override Task SendDataAsync(string data)
@@ -112,7 +109,7 @@ public partial class PadDevice : BaseSerialDevice, IPadDevice
 
     protected async override Task StopDevice()
     {
-        await StopCycle(true);
+        await StopCycle();
     }
 
     protected async override void ProcessDataLine(string dataLine)
