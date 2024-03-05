@@ -110,13 +110,13 @@ public partial class App : Application
     protected async override void OnLaunched(LaunchActivatedEventArgs args)
     {
         base.OnLaunched(args);
+        await App.GetService<IThemeSelectorService>().SetRequestedThemeAsync();
+        await Task.CompletedTask;
 
         var customSplashScreen = new CustomSplashScreen();  
         App.MainWindow.Content = customSplashScreen;
         App.MainWindow.Activate();
         App.MainWindow.ExtendsContentIntoTitleBar = true;
-        await App.GetService<IThemeSelectorService>().SetRequestedThemeAsync();
-        await Task.CompletedTask;
 
         await Task.Delay(1000);
 
