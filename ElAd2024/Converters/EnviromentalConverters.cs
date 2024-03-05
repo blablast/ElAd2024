@@ -41,7 +41,7 @@ public abstract class BaseEnviromentalToStringConverter : IValueConverter
 {
     protected string suffix = string.Empty;
     public virtual object Convert(object value, Type targetType, object parameter, string language)
-        => (value is float targetValue) ? $"{targetValue:0.0}{suffix}" : "N/A"; // Or any default value you prefer
+        => $"{value:0.0}{suffix}"; // Or any default value you prefer
 
     public virtual object ConvertBack(object value, Type targetType, object parameter, string language)
         => throw new NotImplementedException();

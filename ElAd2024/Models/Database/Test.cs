@@ -36,7 +36,11 @@ public class Test
     public ICollection<TestStep> TestSteps { get; set; } = [];
 
     [NotMapped]
-    public double Humidity => (Humidities.Count == 0) ? 0 : (double)(Humidities.FirstOrDefault()?.Value ?? 0.0);   
+    public virtual List<Voltage> VoltagesChart => Voltages.Where(voltage => voltage.Phase > 0).OrderBy(v => v.Elapsed).Take(91).ToList();
+
+    [NotMapped]
+    public double Humidity => (Humidities.Count == 0) ? 0 : (double)(Humidities.FirstOrDefault()?.Value ?? 0.0);
+    [NotMapped]
     public double Temperature => (Temperatures.Count == 0) ? 0 : (double)(Temperatures.FirstOrDefault()?.Value ?? 0.0);
 
     [NotMapped] public int EndOfPhase1 => Phase1Duration / 100;

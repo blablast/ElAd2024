@@ -1,5 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using ElAd2024.Models;
+using Windows.Storage;
 
 namespace ElAd2024.Contracts.Services;
 
@@ -17,6 +18,11 @@ public interface ILocalSettingsService
     int RobotRunRegister { get; set; }
     bool Simulate { get; set; }
     TestParameters Parameters { get; set; }
+
+    string PicturesFolder
+    {
+        get;
+    }
     Task InitializeAsync();
     Task<T?> ReadSettingAsync<T>(string key);
 

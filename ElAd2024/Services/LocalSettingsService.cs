@@ -21,11 +21,11 @@ public partial class LocalSettingsService : ObservableRecipient, ILocalSettingsS
         this.options = options.Value;
 
         // Initialize paths for application data and settings file
-        applicationDataFolder = Path.Combine(localApplicationData,
+        applicationDataFolder = Path.Combine(LocalApplicationData,
             this.options.ApplicationDataFolder ?? DefaultApplicationDataFolder);
         localSettingsFile = this.options.LocalSettingsFile ?? DefaultLocalSettingsFile;
 
-        settings = new Dictionary<string, object>();
+        settings = [];
     }
 
     #endregion Constructor
@@ -37,6 +37,8 @@ public partial class LocalSettingsService : ObservableRecipient, ILocalSettingsS
     {
         isInitialized = true;
         settings = await Task.Run(() => fileService.Read<Dictionary<string, object>>(applicationDataFolder, localSettingsFile)) ?? [];
+
+        PicturesFolder = (await StorageLibrary.GetLibraryAsync(KnownLibraryId.Pictures)).SaveFolder.Path;
 
         // Load settings for each device and other configuration
         EnvDeviceSettings = await ReadSettingAsync<SerialPortInfo>(nameof(EnvDeviceSettings)) ?? new SerialPortInfo();
@@ -51,6 +53,8 @@ public partial class LocalSettingsService : ObservableRecipient, ILocalSettingsS
         RobotIpAddress = await ReadSettingAsync<string>(nameof(RobotIpAddress)) ?? string.Empty;
         Parameters = await ReadSettingAsync<TestParameters>(nameof(Parameters)) ?? new TestParameters();
         Simulate = await ReadSettingAsync<bool>(nameof(Simulate));
+
+
     }
 
     #endregion Initialization
@@ -71,8 +75,12 @@ public partial class LocalSettingsService : ObservableRecipient, ILocalSettingsS
     private readonly IFileService fileService;
     private readonly LocalSettingsOptions options;
 
-    private readonly string localApplicationData =
+    public readonly string LocalApplicationData =
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+    public string PicturesFolder
+    {
+        get; private set;
+    }
 
     private readonly string applicationDataFolder;
     private readonly string localSettingsFile;
@@ -97,6 +105,8 @@ public partial class LocalSettingsService : ObservableRecipient, ILocalSettingsS
     [ObservableProperty] private bool simulate;
 
     [ObservableProperty] private TestParameters parameters = new();
+
+
 
     #endregion Properties
 

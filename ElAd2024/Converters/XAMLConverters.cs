@@ -1,5 +1,6 @@
 ﻿using System.Collections.ObjectModel;
 using System.Globalization;
+using ElAd2024.Contracts.Services;
 using ElAd2024.Models;
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
@@ -7,6 +8,12 @@ using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Media;
 
 namespace ElAd2024.Converters;
+
+public class ImageToFullPathConverter : AbstractConverter
+{
+    public override object Convert(object value, Type targetType, object parameter, string language)
+        => Path.Combine(App.GetService<ILocalSettingsService>().PicturesFolder, value?.ToString() ?? string.Empty);
+}
 
 public class IsSimulatedToBrushConverter : AbstractConverter
 {

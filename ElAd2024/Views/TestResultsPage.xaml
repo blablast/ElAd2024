@@ -21,6 +21,7 @@
         <converters:IsMinusPolarityToStringConverter x:Key="IsMinusPolarityToStringConverter"/>
         <converters:IsPlusPolarityToBrushConverter x:Key="IsPlusPolarityToBrushConverter"/>
         <converters:IsMinusPolarityToBrushConverter x:Key="IsMinusPolarityToBrushConverter"/>
+        <converters:ImageToFullPathConverter x:Key="ImageToFullPathConverter"/>
 
         <!-- Circle Button Style -->
         <Style x:Key="CircleButtonStyle" TargetType="Button">
@@ -69,7 +70,7 @@
             <ItemContainer HorizontalAlignment="Left">
                 <StackPanel Margin="0 0 0 5">
                     <TextBlock Text="{x:Bind FileName}" HorizontalAlignment="Center"/>
-                    <Image Stretch="UniformToFill" Source="{x:Bind FullPath}" DoubleTapped="Image_DoubleTapped"/>
+                    <Image Stretch="UniformToFill" Source="{x:Bind ImageSource}" DoubleTapped="Image_DoubleTapped"/>
                 </StackPanel>
             </ItemContainer>
         </DataTemplate>
@@ -173,7 +174,7 @@
                             <telerikChart:DateTimeCategoricalAxis  x:Name="horizontalAxis" VerticalLocation="Bottom" Foreground="White" LabelFormat="{}{0:0}" MajorTickInterval="5" MajorTickLength="1" />
                         </telerikChart:RadCartesianChart.HorizontalAxis>
                         <telerikChart:RadCartesianChart.VerticalAxis>
-                            <telerikChart:LinearAxis HorizontalLocation="Left" Foreground="#FFF" MajorStep="2000" MinorTicksPerMajor="2"/>
+                            <telerikChart:LinearAxis HorizontalLocation="Left" Foreground="#FFF" MajorStep="2000" MinorTicksPerMajor="2" Minimum="-12000" Maximum="12000" />
                         </telerikChart:RadCartesianChart.VerticalAxis>
                         <telerikChart:RadCartesianChart.Grid>
                             <telerikChart:CartesianChartGrid MajorStripLinesVisibility="XY" MajorGridLinesVisibility="XY" >
@@ -192,7 +193,7 @@
                             </telerikChart:CartesianChartGrid>
                         </telerikChart:RadCartesianChart.Grid>
 
-                        <telerikChart:SplineSeries x:Name="myChartSerie" Stroke="Orange" ItemsSource="{x:Bind Voltages}" SplineTension="0.1">
+                    <telerikChart:SplineSeries x:Name="myChartSerie" Stroke="Orange" ItemsSource="{x:Bind VoltagesChart}" SplineTension="0.1">
                             <telerikChart:SplineSeries.CategoryBinding>
                                 <telerikChart:PropertyNameDataPointBinding PropertyName="Elapsed"/>
                             </telerikChart:SplineSeries.CategoryBinding>
