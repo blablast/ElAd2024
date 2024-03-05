@@ -5,7 +5,6 @@ using Windows.Media.Playback;
 namespace ElAd2024.Contracts.Devices;
 public interface IMediaDevice : IDevice
 {
-    int CameraNumber { get; set; }
     bool IsRecording { get; }
     IMediaPlaybackSource? PlaybackSource { get;}
     MediaFrameSourceGroup? SelectedMediaFrameSourceGroup {

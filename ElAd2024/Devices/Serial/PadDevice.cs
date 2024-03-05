@@ -86,15 +86,6 @@ public partial class PadDevice : BaseSerialDevice, IPadDevice
     public async Task ReleaseFabric(bool isPlusPolarity)
     {
         await SendDataAsync("PUS DRP");
-        await Task.Delay(1000);
-        await SendDataAsync(isPlusPolarity switch
-        {
-            true => "SET 20 1",
-            false => "SET 20 0"
-        });
-        await Task.Delay(1000);
-        await SendDataAsync("PUS DRP");
-        return;
     }
 
 
@@ -121,7 +112,7 @@ public partial class PadDevice : BaseSerialDevice, IPadDevice
 
     protected async override Task StopDevice()
     {
-        await StopCycle(false);
+        await StopCycle(true);
     }
 
     protected async override void ProcessDataLine(string dataLine)
@@ -173,6 +164,7 @@ public partial class PadDevice : BaseSerialDevice, IPadDevice
 
             if (sendNext)
             {
+                await Task.Delay(100);
                 await base.SendDataAsync(Commands.Peek());
             }
         }

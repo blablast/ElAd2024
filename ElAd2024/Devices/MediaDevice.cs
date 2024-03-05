@@ -19,8 +19,6 @@ public partial class MediaDevice : ObservableRecipient, IMediaDevice
 {
     private LowLagMediaRecording? mediaRecording;
 
-    [ObservableProperty] private int cameraNumber;
-
     [ObservableProperty] private bool isConnected;
     [ObservableProperty] private bool isSimulated = false;
 
