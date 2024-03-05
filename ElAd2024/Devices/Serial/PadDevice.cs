@@ -1,4 +1,5 @@
 ﻿using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using ElAd2024.Contracts.Devices;
@@ -82,6 +83,22 @@ public partial class PadDevice : BaseSerialDevice, IPadDevice
         await SendDataAsync("PUS DRP");
     }
 
+    public async Task ReleaseFabric(bool isPlusPolarity)
+    {
+        await SendDataAsync("PUS DRP");
+        await Task.Delay(1000);
+        await SendDataAsync(isPlusPolarity switch
+        {
+            true => "SET 20 1",
+            false => "SET 20 0"
+        });
+        await Task.Delay(1000);
+        await SendDataAsync("PUS DRP");
+        return;
+    }
+
+
+
     private void InitializeChartDataCollection() =>
         dispatcherQueue.TryEnqueue(() =>
         {
@@ -96,7 +113,10 @@ public partial class PadDevice : BaseSerialDevice, IPadDevice
     protected async override Task SendDataAsync(string data)
     {
         Commands.Enqueue(data);
-        if (Commands.Count == 1) { await base.SendDataAsync(Commands.Peek()); }
+        if (Commands.Count == 1) {
+            Debug.WriteLine($"Sending data: {Commands.Peek()}");
+            await base.SendDataAsync(Commands.Peek()); 
+        }
     }
 
     protected async override Task StopDevice()
@@ -142,6 +162,7 @@ public partial class PadDevice : BaseSerialDevice, IPadDevice
             var sendNext = false;
             if (dataLine.StartsWith("OK") && dataLine[3..] == Commands.Peek())
             {
+                Debug.WriteLine($"OK: {Commands.Peek()}");
                 Commands.Dequeue();
                 sendNext = Commands.Count > 0;
             }

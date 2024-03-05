@@ -16,10 +16,13 @@ public class Test
     public int Phase2Duration { get; set; }
     public int Phase3Value { get; set; }
     public int Phase3Duration { get; set; }
-    public int DurationPhaseObserving { get; set; }
     public bool IsPlusPolarity { get; set; }
     public bool AutoRegulation { get; set; }
-
+    public int AutoRegulationDelayPhase1 { get; set; }
+    public int AutoRegulationDelayPhase3 { get; set; }
+    public int AutoRegulationStep { get; set; }
+    public int AutoRegulationMaxCorrectionUp { get; set; }
+    public int AutoRegulationMaxCorrectionDown { get; set; }
     public int BatchId { get; set; }
     public Batch Batch { get; set; } = default!;
 

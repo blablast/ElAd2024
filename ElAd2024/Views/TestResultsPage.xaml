@@ -233,8 +233,12 @@
                             <telerikGrid:DataGridNumericalColumn PropertyName="Phase2Duration"/>
                             <telerikGrid:DataGridNumericalColumn PropertyName="Phase3Value"/>
                             <telerikGrid:DataGridNumericalColumn PropertyName="Phase3Duration"/>
-                            <telerikGrid:DataGridNumericalColumn PropertyName="DurationPhaseObserving"/>
                             <telerikGrid:DataGridBooleanColumn PropertyName="AutoRegulation"/>
+                            <telerikGrid:DataGridNumericalColumn PropertyName="AutoRegulationDelayPhase1"/>
+                            <telerikGrid:DataGridNumericalColumn PropertyName="AutoRegulationDelayPhase3"/>
+                            <telerikGrid:DataGridNumericalColumn PropertyName="AutoRegulationStep"/>
+                            <telerikGrid:DataGridNumericalColumn PropertyName="AutoRegulationMaxCorrectionUp"/>
+                            <telerikGrid:DataGridNumericalColumn PropertyName="AutoRegulationMaxCorrectionDown"/>
                         </telerikGrid:RadDataGrid.Columns>
                     </telerikGrid:RadDataGrid>
                 </StackPanel>

@@ -15,4 +15,6 @@ public interface IPadDevice : IDevice, INotifyPropertyChanged
     Task Setup(object parameters);
     Task StartCycle(bool isPlusPolarity);
     Task StopCycle(bool trimData);
+
+    Task ReleaseFabric(bool isPlusPolarity);
 }

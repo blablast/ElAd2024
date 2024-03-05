@@ -5,9 +5,6 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ElAd2024.Contracts.Devices;
 using ElAd2024.Contracts.Services;
-using ElAd2024.Devices;
-using ElAd2024.Devices.Serial;
-using ElAd2024.Devices.Simulator;
 using ElAd2024.Models;
 using ElAd2024.Models.Database;
 using ElAd2024.Services;
@@ -15,7 +12,6 @@ using ElAd2024.Views;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
-using Telerik.UI.Xaml.Controls.DataVisualization.Map;
 
 namespace ElAd2024.ViewModels;
 

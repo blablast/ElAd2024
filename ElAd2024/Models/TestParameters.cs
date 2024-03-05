@@ -37,6 +37,12 @@ public partial class TestParameters : ObservableRecipient
 
     [ObservableProperty] private int loadForce = 30;
     [ObservableProperty] private bool autoRegulationHV = true;
+    [ObservableProperty] private int autoRegulationDelayPhase1 = 300;
+    [ObservableProperty] private int autoRegulationDelayPhase3 = 1000;
+    [ObservableProperty] private int autoRegulationStep = 250;
+    [ObservableProperty] private int autoRegulationMaxCorrectionUp = 2000;
+    [ObservableProperty] private int autoRegulationMaxCorrectionDown = 0;
+
 
     [ObservableProperty] private bool isStartPlusPolarity = true;
     [ObservableProperty] private int  changePolarityStep = 1;

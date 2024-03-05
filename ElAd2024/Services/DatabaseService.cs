@@ -32,7 +32,7 @@ public partial class DatabaseService : DbContext, IDatabaseService
     {
         try
         {
-            // await Database.EnsureDeletedAsync();
+            //await Database.EnsureDeletedAsync();
             await Database.EnsureCreatedAsync();
         }
         catch (Exception ex)
@@ -113,15 +113,6 @@ public partial class DatabaseService : DbContext, IDatabaseService
             Order = dA.AlgorithmSteps.Count,
             FrontName = @"Humidity",
             BackName = "Getting humidity!"
-        });
-
-        dA.AlgorithmSteps.Add(new AlgorithmStep
-        {
-            Step = Steps.Single(n => n.AsyncActionName == "RobotMove"),
-            Order = dA.AlgorithmSteps.Count,
-            FrontName = @"Home",
-            BackName = "Moving Pad!",
-            ActionParameter = "2"
         });
 
         dA.AlgorithmSteps.Add(new AlgorithmStep

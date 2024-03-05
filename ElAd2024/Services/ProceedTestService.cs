@@ -293,12 +293,10 @@ public partial class ProceedTestService : ObservableRecipient, IProceedTestServi
         await DeadStep();
     }
 
-
-
     private async Task ReleaseFabric(string? _)
     {
         await AliveStep();
-        await AllDevices.PadDevice.StopCycle(true);
+        await AllDevices.PadDevice.ReleaseFabric(CurrentTest.IsPlusPolarity);
         await DeadStep();
     }
 
@@ -324,10 +322,15 @@ public partial class ProceedTestService : ObservableRecipient, IProceedTestServi
         {
             (1, Parameters!.HighVoltagePhase1),
             (2, Parameters.HighVoltagePhase3),
-            (4, Parameters.DurationPhase1 / 100),
-            (5, Parameters.DurationPhase2 / 100),
-            (6, Parameters.DurationPhase3 / 100),
-            (8, Parameters.AutoRegulationHV ? 1 : 0)
+            (4, (int)(Parameters.DurationPhase1 / 100)),
+            (5, (int)(Parameters.DurationPhase2 / 100)),
+            (6, (int)(Parameters.DurationPhase3 / 100)),
+            (8, Parameters.AutoRegulationHV ? 1 : 0),
+            (15, Parameters.AutoRegulationMaxCorrectionUp),
+            (16, Parameters.AutoRegulationMaxCorrectionDown),
+            (17, Parameters.AutoRegulationStep),
+            (18, (int)(Parameters.AutoRegulationDelayPhase1 / 100)),
+            (19, (int)(Parameters.AutoRegulationDelayPhase3 / 100))
         });
 
         // Prepare DB
@@ -339,6 +342,11 @@ public partial class ProceedTestService : ObservableRecipient, IProceedTestServi
         CurrentTest.Phase3Duration = Parameters.DurationPhase3;
         CurrentTest.LoadForce = Parameters.LoadForce;
         CurrentTest.AutoRegulation = Parameters.AutoRegulationHV;
+        CurrentTest.AutoRegulationDelayPhase1 = Parameters.AutoRegulationDelayPhase1;
+        CurrentTest.AutoRegulationDelayPhase3 = Parameters.AutoRegulationDelayPhase3;
+        CurrentTest.AutoRegulationStep = Parameters.AutoRegulationStep;
+        CurrentTest.AutoRegulationMaxCorrectionUp = Parameters.AutoRegulationMaxCorrectionUp;
+        CurrentTest.AutoRegulationMaxCorrectionDown = Parameters.AutoRegulationMaxCorrectionDown;
         CurrentTest.IsPlusPolarity = !(((Parameters.Counter - 1) / Parameters.ChangePolarityStep % 2 == 0) ^
                                       Parameters.IsStartPlusPolarity);
 
