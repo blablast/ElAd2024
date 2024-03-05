@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using ElAd2024.Contracts.Services;
 using ElAd2024.Models.Database;
 using Microsoft.EntityFrameworkCore;
+using Windows.Storage;
 
 namespace ElAd2024.Services;
 
@@ -30,6 +31,17 @@ public partial class DatabaseService : DbContext, IDatabaseService
 
     public async Task InitializeAsync()
     {
+        
+        // Copy database to known location
+        var dbFile = await StorageFile.GetFileFromPathAsync(DbPath);
+        if (dbFile is null)
+        {
+                   var dbUri = new Uri("ms-appx:///ElAd2024.db");
+                   var dbFileInPackage = await StorageFile.GetFileFromApplicationUriAsync(dbUri);
+                   await dbFileInPackage.CopyAsync(ApplicationData.Current.LocalFolder, "ElAd2024.db", NameCollisionOption.ReplaceExisting);
+         }
+
+
         try
         {
             //await Database.EnsureDeletedAsync();
