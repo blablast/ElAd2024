@@ -13,6 +13,7 @@ public interface IAllDevices : IDisposable
     IRobotDevice RobotDevice { get; set; }
     IScaleDevice ScaleDevice { get; set; }
     ITemperatureDevice TemperatureDevice  { get; set; }
+    IElectricFieldDevice ElectricFieldDevice { get; set; }
 
     Task InitializeAsync();
     Task InitializePortsAsync();
@@ -21,5 +22,6 @@ public interface IAllDevices : IDisposable
     Task InitializePadAsync();
     Task InitializeCameraAsync();
     Task InitializeRobotAsync();
+    Task InitializeElectricFieldAsync();
 
 }

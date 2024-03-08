@@ -18,6 +18,7 @@ public partial class AllDevices(ILocalSettingsService localSettingsService) : Ob
     [ObservableProperty] private IRobotDevice robotDevice = new RobotDevice();
     [ObservableProperty] private IScaleDevice scaleDevice = new ScaleDevice();
     [ObservableProperty] private ITemperatureDevice temperatureDevice = new HumidityAndTemperatureDevice();
+    [ObservableProperty] private IElectricFieldDevice electricFieldDevice = new KeyenceMultiDevice();
 
     public ObservableCollection<SerialPortInfo> AvailablePorts { get; } = [];
     public ObservableCollection<string> AvailablePortsNames { get; } = [];
@@ -85,6 +86,18 @@ public partial class AllDevices(ILocalSettingsService localSettingsService) : Ob
             await RobotDevice.InitializeAsync();
         }
     }
+
+    public async Task InitializeElectricFieldAsync()
+    {
+
+        await ElectricFieldDevice.ConnectAsync(LoadSpi(localSettingsService.ElectricFieldDeviceSettings));
+        if (!ElectricFieldDevice.IsConnected && localSettingsService.Simulate)
+        {
+            ElectricFieldDevice = new KeyenceMultiSimulator();
+            await ElectricFieldDevice.ConnectAsync();
+        }
+    }
+
     public async Task InitializeAsync()
     {
         await InitializePortsAsync();

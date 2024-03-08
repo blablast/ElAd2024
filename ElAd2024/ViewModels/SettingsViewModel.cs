@@ -43,6 +43,10 @@ public partial class SettingsViewModel : ObservableRecipient, IDisposable
     partial void OnSelectedPadDevicePortChanged(string value)
         => AssignPortName(LocalSettingsService.PadDeviceSettings, value);
 
+    [ObservableProperty] private string selectedElectricFieldDevicePort = string.Empty;
+    partial void OnSelectedElectricFieldDevicePortChanged(string value)
+        => AssignPortName(LocalSettingsService.ElectricFieldDeviceSettings, value);
+
     [ObservableProperty] private Microsoft.UI.Xaml.ElementTheme elementTheme;
     [ObservableProperty] private string versionDescription;
     [ObservableProperty] private IAllDevices allDevices;
@@ -94,6 +98,7 @@ public partial class SettingsViewModel : ObservableRecipient, IDisposable
         SelectedEnvDevicePort = LocalSettingsService.EnvDeviceSettings.ToString();
         SelectedScaleDevicePort = LocalSettingsService.ScaleDeviceSettings.ToString();
         SelectedPadDevicePort = LocalSettingsService.PadDeviceSettings.ToString();
+        SelectedElectricFieldDevicePort = LocalSettingsService.ElectricFieldDeviceSettings.ToString();
     }
 
     private static string GetVersionDescription()

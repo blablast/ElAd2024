@@ -13,6 +13,7 @@ public interface ILocalSettingsService
     SerialPortInfo EnvDeviceSettings { get; set; }
     SerialPortInfo PadDeviceSettings { get; set; }
     SerialPortInfo ScaleDeviceSettings { get; set; }
+    SerialPortInfo ElectricFieldDeviceSettings { get; set; }
     int RobotGotoPositionRegister  { get; set; }
     int RobotInPositionRegister { get; set; }
     string RobotIpAddress { get; set; }

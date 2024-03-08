@@ -14,8 +14,6 @@ public partial class KeyenceMultiDevice : BaseSerialDevice, IElectricFieldDevice
 
     public Queue<string> Commands { get; set; } = [];
 
-    private bool isReading;
-
     public KeyenceMultiDevice()
     {
         dispatcherQueue = DispatcherQueue.GetForCurrentThread();

@@ -41,7 +41,8 @@ public partial class LocalSettingsService : ObservableRecipient, ILocalSettingsS
         EnvDeviceSettings = await ReadSettingAsync<SerialPortInfo>(nameof(EnvDeviceSettings)) ?? new SerialPortInfo();
         ScaleDeviceSettings = await ReadSettingAsync<SerialPortInfo>(nameof(ScaleDeviceSettings)) ?? new SerialPortInfo();
         PadDeviceSettings = await ReadSettingAsync<SerialPortInfo>(nameof(PadDeviceSettings)) ?? new SerialPortInfo();
-       
+        ElectricFieldDeviceSettings = await ReadSettingAsync<SerialPortInfo>(nameof(ElectricFieldDeviceSettings)) ?? new SerialPortInfo();
+
         RobotGotoPositionRegister = await ReadSettingAsync<int>(nameof(RobotGotoPositionRegister));
         RobotInPositionRegister = await ReadSettingAsync<int>(nameof(RobotInPositionRegister));
         RobotLoadForceRegister = await ReadSettingAsync<int>(nameof(RobotLoadForceRegister));
@@ -87,6 +88,7 @@ public partial class LocalSettingsService : ObservableRecipient, ILocalSettingsS
     [ObservableProperty] private SerialPortInfo? envDeviceSettings;
     [ObservableProperty] private SerialPortInfo? scaleDeviceSettings;
     [ObservableProperty] private SerialPortInfo? padDeviceSettings;
+    [ObservableProperty] private SerialPortInfo? electricFieldDeviceSettings;
 
     [ObservableProperty] private int robotGotoPositionRegister = 1;
     [ObservableProperty] private int robotLoadForceRegister = 2;
@@ -159,6 +161,7 @@ public partial class LocalSettingsService : ObservableRecipient, ILocalSettingsS
         await SaveSettingAsync(nameof(EnvDeviceSettings), EnvDeviceSettings);
         await SaveSettingAsync(nameof(ScaleDeviceSettings), ScaleDeviceSettings);
         await SaveSettingAsync(nameof(PadDeviceSettings), PadDeviceSettings);
+        await SaveSettingAsync(nameof(ElectricFieldDeviceSettings), ElectricFieldDeviceSettings);
     }
 
     public async Task SaveParametersAsync() => await SaveSettingAsync(nameof(Parameters), Parameters);

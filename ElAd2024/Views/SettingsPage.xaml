@@ -182,6 +182,15 @@
                             <ContentControl Content="{x:Bind ViewModel.LocalSettingsService.PadDeviceSettings, Mode=OneWay}" ContentTemplate="{StaticResource DeviceSettingsTemplate}"/>
                         </StackPanel>
                     </Expander>
+                    <Expander Header="Electric FIeld Sensor Device" IsExpanded="True">
+                        <StackPanel>
+                            <TextBlock Text="Serial Port:" Margin="0,5,0,0"/>
+                            <ComboBox ItemsSource="{x:Bind ViewModel.AllDevices.AvailablePortsNames, Mode=OneWay}"
+                              SelectedItem="{x:Bind ViewModel.SelectedElectricFieldDevicePort, Mode=TwoWay}"
+                                  HorizontalAlignment="Stretch"/>
+                            <ContentControl Content="{x:Bind ViewModel.LocalSettingsService.EnvDeviceSettings, Mode=OneWay}" ContentTemplate="{StaticResource DeviceSettingsTemplate}"/>
+                        </StackPanel>
+                    </Expander>
                 </StackPanel>
                 <Button Content="Save serial port settings" Margin="{StaticResource XSmallTopMargin}" Command="{x:Bind ViewModel.SaveSettingsCommand}" Style="{StaticResource AccentButtonStyle}" HorizontalAlignment="Right"/>
 
