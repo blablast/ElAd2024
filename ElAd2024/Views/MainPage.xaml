@@ -156,6 +156,8 @@
                                            Maximum="{x:Bind model:TestParameters.MaxDuration, Mode=OneWay}"
                                            SliderWidth="250" Header="Time Phase 1 [ms]:" MaxToMin="{x:Bind ViewModel.Parameters.DurationPhase1MaxToMin, Mode=OneWay}"
                                            TickFrequency="500" />
+                                    <NumberBox Header="Extend duration in the 1st cycle: " Value="{x:Bind ViewModel.Parameters.ExtendDurationOfPhase1In1stCycle, Mode=TwoWay}" SmallChange="100" Minimum="0" Maximum="2000" Style="{StaticResource NumberBoxStyle}" Margin="0 0 0 12"/>
+
 
                                     <bs:Slider SelectionStart="{x:Bind ViewModel.Parameters.HighVoltagePhase1Lo, Mode=TwoWay}"
                                            SelectionEnd="{x:Bind ViewModel.Parameters.HighVoltagePhase1Hi, Mode=TwoWay}"
@@ -191,7 +193,7 @@
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal">
                                         <NumberBox Header="Change every" Value="{x:Bind ViewModel.Parameters.ChangePolarityStep, Mode=TwoWay}" SmallChange="1" Minimum="1" Maximum="100" Style="{StaticResource NumberBoxStyle}" Margin="0 0 0 0 "/>
-                                        <NumberBox Header="Load Force [N]" Value="{x:Bind ViewModel.Parameters.LoadForce, Mode=TwoWay}" SmallChange="1" Minimum="1" Maximum="60" Style="{StaticResource NumberBoxStyle}" Margin="12 0 0 0 "/>
+                                        <NumberBox Header="Load Force [N]" Value="{x:Bind ViewModel.Parameters.LoadForce, Mode=TwoWay}" SmallChange="1" Minimum="10" Maximum="100" Style="{StaticResource NumberBoxStyle}" Margin="12 0 0 0 "/>
                                     </StackPanel>
                                 </StackPanel>
                                 <StackPanel Width="282">

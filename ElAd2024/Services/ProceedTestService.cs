@@ -229,7 +229,7 @@ public partial class ProceedTestService : ObservableRecipient, IProceedTestServi
     private async Task Finish(string? _)
     {
         await AliveStep();
-        CurrentTest.Voltages = new List<Voltage>(AllDevices.PadDevice.Voltages);
+        CurrentTest.Voltages = new List<Voltage>(AllDevices.PadDevice.Voltages.Where(v=>v.Value is not null));
         IsRunning = false;
         await DeadStep();
         robotTimer?.Dispose();
@@ -323,7 +323,7 @@ public partial class ProceedTestService : ObservableRecipient, IProceedTestServi
         {
             (1, Parameters!.HighVoltagePhase1),
             (2, Parameters.HighVoltagePhase3),
-            (4, (int)(Parameters.DurationPhase1 / 100)),
+            (4, (int)((Parameters.DurationPhase1 + (Parameters.Counter == 1 ? Parameters.ExtendDurationOfPhase1In1stCycle : 0 )) / 100)),
             (5, (int)(Parameters.DurationPhase2 / 100)),
             (6, (int)(Parameters.DurationPhase3 / 100)),
             (8, Parameters.AutoRegulationHV ? 1 : 0),
@@ -350,12 +350,6 @@ public partial class ProceedTestService : ObservableRecipient, IProceedTestServi
         CurrentTest.AutoRegulationMaxCorrectionDown = Parameters.AutoRegulationMaxCorrectionDown;
         CurrentTest.IsPlusPolarity = !(((Parameters.Counter - 1) / Parameters.ChangePolarityStep % 2 == 0) ^
                                       Parameters.IsStartPlusPolarity);
-
-        // Prepare Robot
-        await AllDevices.RobotDevice.SetRegisterAsync(5, true);    // RESET positions
-        await AllDevices.RobotDevice.SetRegisterAsync(localSettingsService.RobotLoadForceRegister, Parameters.LoadForce);
-        await AllDevices.RobotDevice.SetRegisterAsync(localSettingsService.RobotGotoPositionRegister, 0);
-
         await DeadStep();
     }
 

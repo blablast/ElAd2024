@@ -56,9 +56,12 @@ public partial class PadDevice : BaseSerialDevice, IPadDevice
         await Task.CompletedTask;
     }
 
-    public async Task StartCycle(bool isPlusPolarity)
+    public async Task StartCycle(bool isPlusPolarity, bool force = false)
     {
+
+
         InitializeChartDataCollection();
+        if (force) Commands.Clear();
         await SendDataAsync(isPlusPolarity switch
         {
             true => "PUL ST+",
@@ -66,8 +69,9 @@ public partial class PadDevice : BaseSerialDevice, IPadDevice
         });
     }
 
-    public async Task StopCycle()
+    public async Task StopCycle(bool force = true)
     {
+        if (force) Commands.Clear();
         await SendDataAsync("PUS DRP");
     }
 

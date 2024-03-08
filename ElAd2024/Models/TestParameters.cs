@@ -14,6 +14,8 @@ public partial class TestParameters : ObservableRecipient
     [ObservableProperty] private int durationPhase1Lo = 2000;
     [ObservableProperty] private int durationPhase1Hi = 3000;
     [ObservableProperty] private bool durationPhase1MaxToMin = true;
+    
+    [ObservableProperty] private int extendDurationOfPhase1In1stCycle = 0;
 
     [ObservableProperty] private int highVoltagePhase1 = 5000;
     [ObservableProperty] private int highVoltagePhase1Lo = 4000;

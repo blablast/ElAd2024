@@ -229,7 +229,7 @@ public partial class MainViewModel : ObservableRecipient, IDisposable
     public async Task PadStartAsync()
     {
         ArgumentNullException.ThrowIfNull(AllDevices.PadDevice);
-        await AllDevices.PadDevice.StartCycle(Parameters.IsStartPlusPolarity);
+        await AllDevices.PadDevice.StartCycle(Parameters.IsStartPlusPolarity, true);
     }
 
 
@@ -237,7 +237,7 @@ public partial class MainViewModel : ObservableRecipient, IDisposable
     public async Task PadStopAsync()
     {
         ArgumentNullException.ThrowIfNull(AllDevices.PadDevice);
-        await AllDevices.PadDevice.StopCycle();
+        await AllDevices.PadDevice.StopCycle(true);
     }
 
     [RelayCommand]
@@ -249,6 +249,12 @@ public partial class MainViewModel : ObservableRecipient, IDisposable
             if (SelectedAlgorithm is not null)
             {
                 await ProceedTest.InitializeStepsAsync(SelectedAlgorithm.Id);
+                
+                // Prepare Robot
+                await AllDevices.RobotDevice.SetRegisterAsync(5, true);    // RESET positions
+                await AllDevices.RobotDevice.SetRegisterAsync(localSettingsService.RobotLoadForceRegister, Parameters.LoadForce);
+                await AllDevices.RobotDevice.SetRegisterAsync(localSettingsService.RobotGotoPositionRegister, 0);
+
                 await RunNextTest();
             }
         }

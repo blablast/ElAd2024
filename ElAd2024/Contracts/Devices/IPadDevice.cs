@@ -13,7 +13,7 @@ public interface IPadDevice : IDevice, INotifyPropertyChanged
     byte Phase { get; }
     int Elapsed { get; }
     Task Setup(object parameters);
-    Task StartCycle(bool isPlusPolarity);
-    Task StopCycle();
+    Task StartCycle(bool isPlusPolarity, bool force = false);
+    Task StopCycle(bool force = true);
     Task ReleaseFabric();
 }
