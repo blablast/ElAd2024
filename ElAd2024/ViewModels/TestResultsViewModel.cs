@@ -24,6 +24,7 @@ public partial class TestResultsViewModel(IDatabaseService databaseService, ILoc
             .Include(b => b.Tests).ThenInclude(t => t.Weights)
             .Include(b => b.Tests).ThenInclude(t => t.Humidities)
             .Include(b => b.Tests).ThenInclude(t => t.Temperatures)
+            .Include(b => b.Tests).ThenInclude(t => t.ElectroStatics)   
             );
 
     [RelayCommand]

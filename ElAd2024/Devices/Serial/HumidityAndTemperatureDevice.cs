@@ -8,7 +8,7 @@ public partial class HumidityAndTemperatureDevice : BaseSerialDevice, ITemperatu
     [ObservableProperty] private float temperature;
     [ObservableProperty] private float humidity;
 
-    protected async override Task StopDevice()
+    public async override Task Stop()
     {
         await Task.Delay(1000);
         await SendDataAsync("SEND AUTO ON");

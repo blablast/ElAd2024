@@ -9,4 +9,7 @@ public interface IDevice : IDisposable, INotifyPropertyChanged
     bool IsConnected { get; }
     Task ConnectAsync(object? parameters = null);
     Task DisconnectAsync();
+
+    Task Stop();
+    Task GetData(bool forceClear = false);
 }

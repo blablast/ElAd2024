@@ -9,6 +9,11 @@ using Microsoft.UI.Xaml.Media;
 
 namespace ElAd2024.Converters;
 
+public class TimeToStringConverter : AbstractConverter
+{
+    public override object Convert(object value, Type targetType, object parameter, string language)
+        => (value is DateTime dateTime) ? dateTime.ToString("HH:mm:ss") : "N/A";
+}
 public class ImageToFullPathConverter : AbstractConverter
 {
     public override object Convert(object value, Type targetType, object parameter, string language)

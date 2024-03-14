@@ -19,8 +19,14 @@ public partial class SerialPortManagerService : ObservableObject, IDisposable
     private DataWriter? dataWriter;
     public int Delay { get; set; } = 0;
 
-    public SerialPortInfo? PortInfo { get; set; }
-    public SerialDevice? Device { get; set; }
+    public SerialPortInfo? PortInfo
+    {
+        get; set;
+    }
+    public SerialDevice? Device
+    {
+        get; set;
+    }
     public uint CountBytes { get; set; } = 1024;
 
     public void Dispose()
@@ -68,7 +74,10 @@ public partial class SerialPortManagerService : ObservableObject, IDisposable
             {
                 dataWriter?.WriteString(c.ToString());
                 await dataWriter?.StoreAsync();
-                await Task.Delay(Delay);
+                if (Delay > 0)
+                {
+                    await Task.Delay(Delay);
+                }
             }
         }
         else
@@ -121,7 +130,7 @@ public partial class SerialPortManagerService : ObservableObject, IDisposable
 
     protected virtual void OnDataReceived(string data)
         => DataReceived?.Invoke(data);
-    
+
     private async Task StartReadingAsync(SerialDevice? serialDevice, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(serialDevice);

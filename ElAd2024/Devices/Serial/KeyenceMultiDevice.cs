@@ -4,22 +4,22 @@ using ElAd2024.Contracts.Devices;
 using Microsoft.UI.Dispatching;
 
 namespace ElAd2024.Devices.Serial;
-public partial class KeyenceMultiDevice : BaseSerialDevice, IElectricFieldDevice, ITemperatureDevice, IHumidityDevice
+public partial class KeyenceMultiDevice : BaseSerialDevice, IElectricFieldDevice //, ITemperatureDevice, IHumidityDevice
 {
-    [ObservableProperty] private float electricField;
-    [ObservableProperty] private float temperature;
-    [ObservableProperty] private float humidity;
+    [ObservableProperty] private int value;
+    //[ObservableProperty] private float temperature;
+    //[ObservableProperty] private float humidity;
 
-    private readonly DispatcherQueue dispatcherQueue;
+    //private readonly DispatcherQueue dispatcherQueue;
 
     public Queue<string> Commands { get; set; } = [];
 
     public KeyenceMultiDevice()
     {
-        dispatcherQueue = DispatcherQueue.GetForCurrentThread();
+        //dispatcherQueue = DispatcherQueue.GetForCurrentThread();
     }
 
-    public async Task GetData(bool forceClear = false)
+    public async new Task GetData(bool forceClear)
     {
         if (forceClear)
         {
@@ -27,8 +27,8 @@ public partial class KeyenceMultiDevice : BaseSerialDevice, IElectricFieldDevice
         }
 
         await SendDataAsync("MS");
-        await SendDataAsync("SR,00,045");
-        await SendDataAsync("SR,00,046");
+        //await SendDataAsync("SR,00,045");
+        //await SendDataAsync("SR,00,046");
     }
 
     protected async override Task SendDataAsync(string data)
@@ -47,25 +47,26 @@ public partial class KeyenceMultiDevice : BaseSerialDevice, IElectricFieldDevice
             var parts = dataLine.Split(',');
             if (parts.Length == 3 && double.TryParse(parts[2], NumberStyles.Any, CultureInfo.InvariantCulture, out var electricFieldValue))
             {
-                dispatcherQueue.TryEnqueue(() => { ElectricField = (float)electricFieldValue; });
+                Value = (int)((float)electricFieldValue * 1000);
+                //dispatcherQueue.TryEnqueue(() => { Value = (int)((float)electricFieldValue*1000); });
             }
         }
-        else if (dataLine.StartsWith("SR,00,045"))
-        {
-            var parts = dataLine.Split(',');
-            if (parts.Length == 4 && double.TryParse(parts[3], NumberStyles.Any, CultureInfo.InvariantCulture, out var temperatureValue))
-            {
-                dispatcherQueue.TryEnqueue(() => { Temperature = (float)temperatureValue; });
-            }
-        }
-        else if (dataLine.StartsWith("SR,00,046"))
-        {
-            var parts = dataLine.Split(',');
-            if (parts.Length == 4 && double.TryParse(parts[3], NumberStyles.Any, CultureInfo.InvariantCulture, out var humidityValue))
-            {
-                dispatcherQueue.TryEnqueue(() => { Humidity = (float)humidityValue; });
-            }
-        }
+        //else if (dataLine.StartsWith("SR,00,045"))
+        //{
+        //    var parts = dataLine.Split(',');
+        //    if (parts.Length == 4 && double.TryParse(parts[3], NumberStyles.Any, CultureInfo.InvariantCulture, out var temperatureValue))
+        //    {
+        //        dispatcherQueue.TryEnqueue(() => { Temperature = (float)temperatureValue; });
+        //    }
+        //}
+        //else if (dataLine.StartsWith("SR,00,046"))
+        //{
+        //    var parts = dataLine.Split(',');
+        //    if (parts.Length == 4 && double.TryParse(parts[3], NumberStyles.Any, CultureInfo.InvariantCulture, out var humidityValue))
+        //    {
+        //        dispatcherQueue.TryEnqueue(() => { Humidity = (float)humidityValue; });
+        //    }
+        //}
 
         if (Commands.Count > 0)
         {

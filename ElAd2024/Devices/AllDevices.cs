@@ -104,6 +104,7 @@ public partial class AllDevices(ILocalSettingsService localSettingsService) : Ob
         await InitializeTemperatureAndHumidityAsync();
         await InitializeScaleAsync();
         await InitializePadAsync();
+        await InitializeElectricFieldAsync();
         await InitializeCameraAsync();
         await InitializeRobotAsync();
     }

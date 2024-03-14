@@ -76,7 +76,7 @@ public partial class DatabaseService(ILocalSettingsService localSettingsService)
                 new() { AsyncActionName = "RobotMove", Style = Step.DeviceType.Robot, HasParameter = true, IsNumericParameter = true },
                 new() { AsyncActionName = "GetTemperature", Style = Step.DeviceType.Environment },
                 new() { AsyncActionName = "GetHumidity", Style = Step.DeviceType.Environment },
-                new() { AsyncActionName = "GetStatic", Style = Step.DeviceType.Environment },
+                new() { AsyncActionName = "GetStatic", Style = Step.DeviceType.Environment, HasParameter = true },
                 new() { AsyncActionName = "TakeFabric", Style = Step.DeviceType.Pad },
                 new() { AsyncActionName = "Wait", Style = Step.DeviceType.Computer, HasParameter = true, IsNumericParameter = true },
                 new() { AsyncActionName = "ReleaseFabric", Style = Step.DeviceType.Pad }
@@ -122,7 +122,7 @@ public partial class DatabaseService(ILocalSettingsService localSettingsService)
             Order = dA.AlgorithmSteps.Count,
             FrontName = @"Photo",
             BackName = "Taking photo...",
-            ActionParameter = "Ready to PickUp"
+            ActionParameter = "Ready to PickUp" 
         });
 
         dA.AlgorithmSteps.Add(new AlgorithmStep
@@ -133,6 +133,36 @@ public partial class DatabaseService(ILocalSettingsService localSettingsService)
             BackName = "Weighting...",
             ActionParameter = "StackFull"
         });
+
+        dA.AlgorithmSteps.Add(new AlgorithmStep
+        {
+            Step = Steps.Single(n => n.AsyncActionName == "RobotMove"),
+            Order = dA.AlgorithmSteps.Count,
+            FrontName = @"EP",
+            BackName = "Moving Pad...",
+            ActionParameter = "5"
+        });
+
+        for (var i = 0; i < 3; i++)
+        {
+            dA.AlgorithmSteps.Add(new AlgorithmStep
+            {
+                Step = Steps.Single(n => n.AsyncActionName == "GetStatic"),
+                Order = dA.AlgorithmSteps.Count,
+                FrontName = @"Electro static",
+                BackName = "Measuring...",
+                ActionParameter = $"Measure: {i+1}"
+            });
+
+            dA.AlgorithmSteps.Add(new AlgorithmStep
+            {
+                Step = Steps.Single(n => n.AsyncActionName == "Wait"),
+                Order = dA.AlgorithmSteps.Count,
+                FrontName = @"Wait",
+                BackName = "Waiting...",
+                ActionParameter = "1000"
+            });
+        }
 
         dA.AlgorithmSteps.Add(new AlgorithmStep
         {
@@ -180,13 +210,51 @@ public partial class DatabaseService(ILocalSettingsService localSettingsService)
 
         dA.AlgorithmSteps.Add(new AlgorithmStep
         {
-            Step = Steps.Single(n => n.AsyncActionName == "Wait"),
+            Step = Steps.Single(n => n.AsyncActionName == "RobotMove"),
             Order = dA.AlgorithmSteps.Count,
-            FrontName = @"Wait",
-            BackName = "Waiting...",
-            ActionParameter = "3000"
+            FrontName = @"EP",
+            BackName = "Moving Pad...",
+            ActionParameter = "5"
         });
 
+        for (var i = 0; i < 3; i++)
+        {
+            dA.AlgorithmSteps.Add(new AlgorithmStep
+            {
+                Step = Steps.Single(n => n.AsyncActionName == "GetStatic"),
+                Order = dA.AlgorithmSteps.Count,
+                FrontName = @"Electro static",
+                BackName = "Measuring...",
+                ActionParameter = $"Measure: {i + 1}"
+            });
+
+            dA.AlgorithmSteps.Add(new AlgorithmStep
+            {
+                Step = Steps.Single(n => n.AsyncActionName == "Wait"),
+                Order = dA.AlgorithmSteps.Count,
+                FrontName = @"Wait",
+                BackName = "Waiting...",
+                ActionParameter = "1000"
+            });
+        }
+
+        dA.AlgorithmSteps.Add(new AlgorithmStep
+        {
+            Step = Steps.Single(n => n.AsyncActionName == "RobotMove"),
+            Order = dA.AlgorithmSteps.Count,
+            FrontName = @"Home",
+            BackName = "Moving Pad...",
+            ActionParameter = "6"
+        });
+
+        dA.AlgorithmSteps.Add(new AlgorithmStep
+        {
+            Step = Steps.Single(n => n.AsyncActionName == "RobotMove"),
+            Order = dA.AlgorithmSteps.Count,
+            FrontName = @"Place",
+            BackName = "Moving Pad...",
+            ActionParameter = "3"
+        });
 
         dA.AlgorithmSteps.Add(new AlgorithmStep
         {
@@ -194,6 +262,34 @@ public partial class DatabaseService(ILocalSettingsService localSettingsService)
             Order = dA.AlgorithmSteps.Count,
             FrontName = @"Release",
             BackName = "Releasing up\nfabric..."
+        });
+
+        dA.AlgorithmSteps.Add(new AlgorithmStep
+        {
+            Step = Steps.Single(n => n.AsyncActionName == "Wait"),
+            Order = dA.AlgorithmSteps.Count,
+            FrontName = @"Wait",
+            BackName = "Waiting...",
+            ActionParameter = "1000"
+        });
+
+        dA.AlgorithmSteps.Add(new AlgorithmStep
+        {
+            Step = Steps.Single(n => n.AsyncActionName == "RobotMove"),
+            Order = dA.AlgorithmSteps.Count,
+            FrontName = @"Home",
+            BackName = "Moving Pad...",
+            ActionParameter = "4"
+        });
+
+
+        dA.AlgorithmSteps.Add(new AlgorithmStep
+        {
+            Step = Steps.Single(n => n.AsyncActionName == "Wait"),
+            Order = dA.AlgorithmSteps.Count,
+            FrontName = @"Wait",
+            BackName = "Waiting...",
+            ActionParameter = "1000"
         });
 
         dA.AlgorithmSteps.Add(new AlgorithmStep

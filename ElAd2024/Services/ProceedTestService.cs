@@ -1,10 +1,8 @@
 ﻿using System.ComponentModel;
-using System.Diagnostics;
 using System.Reflection;
 using CommunityToolkit.Mvvm.ComponentModel;
 using ElAd2024.Contracts.Devices;
 using ElAd2024.Contracts.Services;
-using ElAd2024.Devices;
 using ElAd2024.Helpers;
 using ElAd2024.Models;
 using ElAd2024.Models.Database;
@@ -281,6 +279,14 @@ public partial class ProceedTestService : ObservableRecipient, IProceedTestServi
         await DeadStep($"{weight}g");
     }
 
+    private async Task GetStatic(string? obj)
+    {
+        await AliveStep();
+        var ep = AllDevices.ElectricFieldDevice.Value;
+        CurrentTest.ElectroStatics.Add(new ElectroStatic { Value = ep, Description = obj ?? string.Empty });
+        await DeadStep($"{ep}V");
+    }
+
     private async Task Wait(string? durationString)
     {
         if (!int.TryParse(durationString, out var duration) || duration <= 0)
@@ -296,8 +302,7 @@ public partial class ProceedTestService : ObservableRecipient, IProceedTestServi
     private async Task ReleaseFabric(string? _)
     {
         await AliveStep();
-        await AllDevices.PadDevice.StopCycle();
-        await AllDevices.PadDevice.ReleaseFabric();
+        await AllDevices.PadDevice.ReleaseFabric(Parameters!.DurationPhase5);
         await DeadStep();
     }
 
@@ -331,7 +336,9 @@ public partial class ProceedTestService : ObservableRecipient, IProceedTestServi
             (16, Parameters.AutoRegulationMaxCorrectionDown),
             (17, Parameters.AutoRegulationStep),
             (18, (int)(Parameters.AutoRegulationDelayPhase1 / 100)),
-            (19, (int)(Parameters.AutoRegulationDelayPhase3 / 100))
+            (19, (int)(Parameters.AutoRegulationDelayPhase3 / 100)),
+            (29, (int)Parameters.HighVoltagePhase5),
+            (30, (int)(Parameters.DurationPhase5 / 100)),
         });
 
         // Prepare DB

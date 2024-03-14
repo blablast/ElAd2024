@@ -188,7 +188,7 @@
                             <ComboBox ItemsSource="{x:Bind ViewModel.AllDevices.AvailablePortsNames, Mode=OneWay}"
                               SelectedItem="{x:Bind ViewModel.SelectedElectricFieldDevicePort, Mode=TwoWay}"
                                   HorizontalAlignment="Stretch"/>
-                            <ContentControl Content="{x:Bind ViewModel.LocalSettingsService.EnvDeviceSettings, Mode=OneWay}" ContentTemplate="{StaticResource DeviceSettingsTemplate}"/>
+                            <ContentControl Content="{x:Bind ViewModel.LocalSettingsService.ElectricFieldDeviceSettings, Mode=OneWay}" ContentTemplate="{StaticResource DeviceSettingsTemplate}"/>
                         </StackPanel>
                     </Expander>
                 </StackPanel>

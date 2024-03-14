@@ -12,7 +12,7 @@ public partial class ScaleDevice : BaseSerialDevice, IScaleDevice
     [ObservableProperty] private bool isStable;
     [ObservableProperty] private int? weight;
 
-    public async Task GetWeight()
+    public async new Task GetData(bool force = false)
     {
         if (!isReading)
         {
@@ -49,7 +49,7 @@ public partial class ScaleDevice : BaseSerialDevice, IScaleDevice
             Weight = null;
             if (!dataLine.StartsWith("ST") || !dataLine.StartsWith("UT")) // Tare
             {
-                Debug.WriteLine($"ScaleDataViewModel->ProcessDataLine: No match for '{dataLine}'");
+                //Debug.WriteLine($"ScaleDataViewModel->ProcessDataLine: No match for '{dataLine}'");
             }
         }
 

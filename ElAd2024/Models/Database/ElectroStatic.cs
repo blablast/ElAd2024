@@ -2,8 +2,7 @@
 public class ElectroStatic : TestValueBaseTable<int>
 {
     // Elapsed time since test start [0.1 seconds]
-    public int Elapsed
-    {
-        get; set;
-    }
+    
+    public string Description {  get; set; } = string.Empty;
+    public DateTime Timestamp { get; set; } = DateTime.Now;
 }

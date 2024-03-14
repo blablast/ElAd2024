@@ -12,29 +12,32 @@ public partial class PadDevice : BaseSerialDevice, IPadDevice
 {
     private readonly int dataCollectionSize;
     private readonly DispatcherQueue dispatcherQueue;
+
+    private List<(int Number, int Value)> previousParameters = [];
     public Queue<string> Commands { get; set; } = [];
 
 
-    [ObservableProperty] private int axisMaxVoltage = +5000;
-    [ObservableProperty] private int axisMinVoltage = -5000;
+    [ObservableProperty] private int axisMaxVoltage = +12000;
+    [ObservableProperty] private int axisMinVoltage = -12000;
     [ObservableProperty] private int elapsed;
     [ObservableProperty] private byte phase;
     [ObservableProperty] private int? value;
     private int index = 0;
 
-    public PadDevice(int dataCollectionSize = 120)
+    public PadDevice(int dataCollectionSize = 250)
     {
         dispatcherQueue = DispatcherQueue.GetForCurrentThread();
         this.dataCollectionSize = dataCollectionSize;
         InitializeChartDataCollection();
-        DeviceService.Delay = 5;
+        DeviceService.Delay = 20;
     }
 
     protected async override Task OnConnected()
     {
-        await SendDataAsync("PUS DRP");
-        await GreenDebug(false);
+        //await SendDataAsync("REL SBY");
         await ConsoleEcho(false);
+        await GreenDebug(false);
+        await SendDataAsync("R");
     }
 
     private async Task GreenDebug(bool isOn = false)
@@ -52,7 +55,17 @@ public partial class PadDevice : BaseSerialDevice, IPadDevice
             throw new ArgumentException("Invalid parameters type.", nameof(parameters));
         }
 
-        parametersList.ForEach(async parameter => await SendDataAsync($"SET {parameter.Number} {parameter.Value}"));
+        foreach (var parameter in parametersList)
+        {
+            if (!previousParameters.Any(p => p.Number == parameter.Number && p.Value == parameter.Value))
+            {
+                await SendDataAsync($"SET {parameter.Number} {parameter.Value}");
+            }
+        }
+        previousParameters.Clear();
+        parametersList.ForEach(previousParameters.Add);
+
+        // parametersList.ForEach(async parameter => await SendDataAsync($"SET {parameter.Number} {parameter.Value}"));
         await Task.CompletedTask;
     }
 
@@ -61,22 +74,38 @@ public partial class PadDevice : BaseSerialDevice, IPadDevice
 
 
         InitializeChartDataCollection();
-        if (force) Commands.Clear();
+        if (force)
+        {
+            Commands.Clear();
+        }
+
         await SendDataAsync(isPlusPolarity switch
         {
-            true => "PUL ST+",
-            false => "PUL ST-"
+            true => "+",
+            false => "-"
+            //true => "PUL ST+",
+            //false => "PUL ST-"
         });
     }
 
     public async Task StopCycle(bool force = true)
     {
-        if (force) Commands.Clear();
-        await SendDataAsync("PUS DRP");
+        if (force)
+        {
+            Commands.Clear();
+        }
+        //await SendDataAsync("PUS DRP");
+        await SendDataAsync("D");
     }
 
-    public async Task ReleaseFabric()
+    public async Task ReleaseFabric(int wait = 1000, bool force = true)
     {
+        await StopCycle(force);
+        await Task.Delay(100);
+        await Task.Delay((int)wait);
+        //await SendDataAsync("REL SBY");
+        await Stop();
+
         dispatcherQueue.TryEnqueue(() =>
         {
             var itemsToRemove = Voltages.Where(v => v.Phase == 0).ToList();
@@ -105,19 +134,23 @@ public partial class PadDevice : BaseSerialDevice, IPadDevice
     protected async override Task SendDataAsync(string data)
     {
         Commands.Enqueue(data);
-        if (Commands.Count == 1) {
+        if (Commands.Count == 1)
+        {
             Debug.WriteLine($"Sending data: {Commands.Peek()}");
-            await base.SendDataAsync(Commands.Peek()); 
+            await base.SendDataAsync(Commands.Peek());
         }
     }
 
-    protected async override Task StopDevice()
+    public async override Task Stop()
     {
-        await StopCycle();
+        Commands.Clear();
+        //await SendDataAsync("REL SBY");
+        await SendDataAsync("R");
     }
 
     protected async override void ProcessDataLine(string dataLine)
     {
+        Debug.WriteLine($"Received data line: {dataLine}");
         if (dataLine.StartsWith("A:"))
         {
             var parts = dataLine[2..].Split(',');
@@ -152,7 +185,16 @@ public partial class PadDevice : BaseSerialDevice, IPadDevice
         else if (Commands.Count > 0)
         {
             var sendNext = false;
-            if (dataLine.StartsWith("OK") && dataLine[3..] == Commands.Peek())
+            Debug.WriteLine($"dataLine: [{dataLine}], Commands.Peek(): [{Commands.Peek()}]");
+
+            if (
+                dataLine.StartsWith("OK") &&  dataLine[3..] == Commands.Peek()
+                || (dataLine == "OK PUL ST+" && Commands.Peek() == "+")
+                || (dataLine == "OK PUL ST-" && Commands.Peek() == "-")
+                || (dataLine == "OK PUS DRP" && Commands.Peek() == "D")
+                || (dataLine == "OK REL SBY" && Commands.Peek() == "R")
+                || (dataLine == "R" && Commands.Peek() == "R")
+              )
             {
                 Debug.WriteLine($"OK: {Commands.Peek()}");
                 Commands.Dequeue();
@@ -161,11 +203,15 @@ public partial class PadDevice : BaseSerialDevice, IPadDevice
             else
             {
                 sendNext = (dataLine.StartsWith("OK") || dataLine.StartsWith("ERR"));
-            }
+                if (sendNext)
+                {
+                    Debug.WriteLine($"Sending next command ({Commands.Peek()}), because: {dataLine}");
+                }
 
+            }
             if (sendNext)
             {
-                await Task.Delay(100);
+                await Task.Delay(10);
                 await base.SendDataAsync(Commands.Peek());
             }
         }

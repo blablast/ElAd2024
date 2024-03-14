@@ -10,6 +10,7 @@ namespace ElAd2024.Devices.Serial;
 public partial class BaseSerialDevice : ObservableRecipient, IDevice
 {
     protected readonly SerialPortManagerService DeviceService = new();
+
     [ObservableProperty] private bool isConnected;
     [ObservableProperty] private bool isSimulated = false;
     public SerialPortInfo? PortInfo
@@ -48,7 +49,7 @@ public partial class BaseSerialDevice : ObservableRecipient, IDevice
         DeviceService.DataReceived += OnDataReceived;
         IsConnected = true;
         await OnConnected();
-        await StopDevice();
+        await Stop();
     }
 
     public async Task DisconnectAsync()
@@ -81,7 +82,7 @@ public partial class BaseSerialDevice : ObservableRecipient, IDevice
 
     protected virtual Task OnConnecting() => Task.CompletedTask; // Hook for derived classes.
     protected virtual Task OnConnected() => Task.CompletedTask; // Hook for derived classes.
-    protected virtual Task StopDevice() => Task.CompletedTask; // Hook for derived classes.
+    public virtual Task Stop() => Task.CompletedTask; // Hook for derived classes.
     protected virtual Task OnDisconnecting() => Task.CompletedTask; // Hook for derived classes.
     protected virtual Task OnDisconnected() => Task.CompletedTask; // Hook for derived classes.
 
@@ -97,4 +98,5 @@ public partial class BaseSerialDevice : ObservableRecipient, IDevice
 
     // Override in derived classes to process each line of data.
     protected virtual void ProcessDataLine(string dataLine) => Debug.WriteLine($"Received data line: {dataLine}");
+    public Task GetData(bool forceClear = false) => throw new NotImplementedException();
 }

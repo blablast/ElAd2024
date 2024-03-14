@@ -12,8 +12,6 @@ using ElAd2024.Services;
 using ElAd2024.Views.Dialogs;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.UI.Dispatching;
-using Microsoft.UI.Xaml;
-using Telerik.UI.Xaml.Controls.DataVisualization.Map;
 
 namespace ElAd2024.ViewModels;
 
@@ -26,6 +24,7 @@ public partial class MainViewModel : ObservableRecipient, IDisposable
 
     private readonly DispatcherQueue? dispatcherQueue;
     private readonly Timer scaleTimer;
+    private readonly Timer electricFieldTimer;
     private Test testInProgress = new();
 
     #endregion
@@ -83,6 +82,7 @@ public partial class MainViewModel : ObservableRecipient, IDisposable
             ProceedTest.Dispose();
         }
         scaleTimer?.Dispose();
+        electricFieldTimer?.Dispose();
         GC.SuppressFinalize(this);
     }
     #endregion
@@ -130,17 +130,25 @@ public partial class MainViewModel : ObservableRecipient, IDisposable
         ProceedTest.PropertyChanged += ProceedTest_PropertyChanged;
 
         scaleTimer = new Timer(ScaleTimerCallback, null, Timeout.Infinite, 0);
+        electricFieldTimer = new(ElectricFieldCallback, null, Timeout.Infinite, 0);
     }
+
+    private void ElectricFieldCallback(object? state)
+        => dispatcherQueue?.TryEnqueue(async () =>
+        {
+            await AllDevices.ElectricFieldDevice.GetData(true);
+        });
 
     private void ScaleTimerCallback(object? state)
         => dispatcherQueue?.TryEnqueue(async () =>
         {
-            await AllDevices.ScaleDevice.GetWeight();
+            await AllDevices.ScaleDevice.GetData();
         });
 
     public async Task InitializeAsync()
     {
         scaleTimer.Change(0, AllDevices.ScaleDevice.IsSimulated ? 5000 : 100);
+        electricFieldTimer.Change(0, AllDevices.ElectricFieldDevice.IsSimulated ? 5000 : 100);
         await Task.CompletedTask;
     }
 
@@ -237,7 +245,7 @@ public partial class MainViewModel : ObservableRecipient, IDisposable
     public async Task PadStopAsync()
     {
         ArgumentNullException.ThrowIfNull(AllDevices.PadDevice);
-        await AllDevices.PadDevice.StopCycle(true);
+        await AllDevices.PadDevice.Stop();
     }
 
     [RelayCommand]
@@ -286,12 +294,12 @@ public partial class MainViewModel : ObservableRecipient, IDisposable
            && (AllDevices.RobotDevice.IsConnected == true);
 
     // Scale Commands
-    [RelayCommand]
-    public async Task ScaleGetWeightAsync()
-    {
-        ArgumentNullException.ThrowIfNull(AllDevices.ScaleDevice);
-        await AllDevices.ScaleDevice.GetWeight();
-    }
+    //[RelayCommand]
+    //public async Task ScaleGetWeightAsync()
+    //{
+    //    ArgumentNullException.ThrowIfNull(AllDevices.ScaleDevice);
+    //    await AllDevices.ScaleDevice.GetData();
+    //}
 
     [RelayCommand]
     public async Task ScaleTareAsync()

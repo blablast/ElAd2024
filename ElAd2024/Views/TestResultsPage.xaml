@@ -22,7 +22,8 @@
         <converters:IsPlusPolarityToBrushConverter x:Key="IsPlusPolarityToBrushConverter"/>
         <converters:IsMinusPolarityToBrushConverter x:Key="IsMinusPolarityToBrushConverter"/>
         <converters:ImageToFullPathConverter x:Key="ImageToFullPathConverter"/>
-
+        <converters:TimeToStringConverter x:Key="TimeToStringConverter"/>
+        
         <!-- Circle Button Style -->
         <Style x:Key="CircleButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="#55111111"/>
@@ -52,6 +53,19 @@
             </StackPanel>
         </DataTemplate>
 
+        <DataTemplate x:Key="ElectroStaticTemplate" x:DataType="db:ElectroStatic">
+            <ItemContainer HorizontalAlignment="Left">
+                <StackPanel>
+                    <TextBlock Style="{StaticResource HeaderGridTextBlockStyle}" HorizontalAlignment="Left" Margin="0 6">
+                        <Run Text="{x:Bind Timestamp, Converter={StaticResource TimeToStringConverter}}"/>
+                        <Run Text=": " />
+                        <Run Text="{x:Bind Value}" FontWeight="Bold"/>
+                        <Run Text="V" />
+                    </TextBlock>
+                </StackPanel>
+            </ItemContainer>
+        </DataTemplate>
+        
         <DataTemplate x:Key="WeightTemplate" x:DataType="db:Weight">
             <ItemContainer HorizontalAlignment="Left">
                 <StackPanel>
@@ -79,7 +93,7 @@
             <Grid Padding="10 10">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="280"/>
-                        <ColumnDefinition Width="0"/>
+                        <ColumnDefinition Width="200"/>
                         <ColumnDefinition Width="1"/>
                         <ColumnDefinition Width="1000"/>
                         <ColumnDefinition Width="300"/>
@@ -146,8 +160,8 @@
                 <StackPanel Grid.Column="1">
                         <ItemsView
                         Width="220" HorizontalAlignment="Left"
-                        ItemsSource="{x:Bind Weights}"
-                        ItemTemplate="{StaticResource WeightTemplate}"/>
+                        ItemsSource="{x:Bind ElectroStatics}"
+                        ItemTemplate="{StaticResource ElectroStaticTemplate}"/>
                     </StackPanel>
 
                 <StackPanel Grid.Column="4">
@@ -169,7 +183,8 @@
                             <telerikChart:CartesianGridLineAnnotation Axis="{Binding ElementName=cartesianChart, Path=HorizontalAxis}" Value ="{x:Bind EndOfPhase1}" Stroke="#CCFFFFFF" StrokeDashArray="10, 5" StrokeThickness="1"/>
                             <telerikChart:CartesianGridLineAnnotation Axis="{Binding ElementName=cartesianChart, Path=HorizontalAxis}" Value ="{x:Bind EndOfPhase2}" Stroke="#CCFFFFFF" StrokeDashArray="10, 5" StrokeThickness="1"/>
                             <telerikChart:CartesianGridLineAnnotation Axis="{Binding ElementName=cartesianChart, Path=HorizontalAxis}" Value ="{x:Bind EndOfPhase3}" Stroke="#CCFFFFFF" StrokeDashArray="10, 5" StrokeThickness="1"/>
-                        </telerikChart:RadCartesianChart.Annotations>
+                            <telerikChart:CartesianGridLineAnnotation Axis="{Binding ElementName=cartesianChart, Path=HorizontalAxis}" Value ="{x:Bind EndOfPhase4}" Stroke="#CCFFFFFF" StrokeDashArray="10, 5" StrokeThickness="1"/>
+                    </telerikChart:RadCartesianChart.Annotations>
                         <telerikChart:RadCartesianChart.HorizontalAxis>
                             <telerikChart:DateTimeCategoricalAxis  x:Name="horizontalAxis" VerticalLocation="Bottom" Foreground="White" LabelFormat="{}{0:0}" MajorTickInterval="5" MajorTickLength="1" />
                         </telerikChart:RadCartesianChart.HorizontalAxis>

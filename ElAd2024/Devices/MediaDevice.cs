@@ -136,4 +136,6 @@ public partial class MediaDevice : ObservableRecipient, IMediaDevice
         GC.SuppressFinalize(this);
     }
 
+    public Task GetData(bool forceClear = false) => throw new NotImplementedException();
+    public Task Stop() => throw new NotImplementedException();
 }

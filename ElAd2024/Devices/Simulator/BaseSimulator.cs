@@ -31,4 +31,6 @@ public partial class BaseSimulator : ObservableRecipient, IDevice, INotifyProper
         await DisconnectAsync();
         GC.SuppressFinalize(this);
     }
+    public Task GetData(bool forceClear = false) => throw new NotImplementedException();
+    public Task Stop() => throw new NotImplementedException();
 }

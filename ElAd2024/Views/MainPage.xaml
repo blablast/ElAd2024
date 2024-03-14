@@ -5,15 +5,10 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:viewModel="using:ElAd2024.ViewModels"    
-    xmlns:local="using:ElAd2024.Views"
     xmlns:model="using:ElAd2024.Models"
     xmlns:db="using:ElAd2024.Models.Database"
-    xmlns:telerikDataVisualization="using:Telerik.UI.Xaml.Controls.DataVisualization"
     xmlns:telerikChart="using:Telerik.UI.Xaml.Controls.Chart"
     xmlns:telerikPrimitives="using:Telerik.UI.Xaml.Controls.Primitives"
-    xmlns:telerikInputs="using:Telerik.UI.Xaml.Controls.Input"
-    xmlns:telerikCharting="using:Telerik.Charting"
-    xmlns:converters="using:ElAd2024.Converters"
     xmlns:bs="using:ElAd2024.Views.UserControls"
     mc:Ignorable="d">
 
@@ -187,25 +182,36 @@
                                            Maximum="{x:Bind model:TestParameters.MaxHighVoltage, Mode=OneWay}"
                                            SliderWidth="250" Header="HV Phase 3 [V]:" MaxToMin="{x:Bind ViewModel.Parameters.HighVoltagePhase3MaxToMin, Mode=OneWay}"
                                                TickFrequency="500" />
+
+                                    <NumberBox Header="Time Phase 5 [ms] " Value="{x:Bind ViewModel.Parameters.DurationPhase5, Mode=TwoWay}" SmallChange="100" Minimum="0" Maximum="10000" Style="{StaticResource NumberBoxStyle}" Margin="0 0 0 12"/>
+                                    <NumberBox Header="HV Phase 5 [V] " Value="{x:Bind ViewModel.Parameters.HighVoltagePhase5, Mode=TwoWay}" SmallChange="100" 
+                                               Minimum="{x:Bind model:TestParameters.MinHighVoltage, Mode=OneWay}"
+                                               Maximum="{x:Bind model:TestParameters.MaxHighVoltage, Mode=OneWay}"
+                                               Style="{StaticResource NumberBoxStyle}" Margin="0 0 0 12"/>
+
+                                </StackPanel>
+                                <StackPanel Width="282">
+                                    <Expander Header="Auto regulation" IsExpanded="False" HorizontalAlignment="Stretch">
+                                        <StackPanel>
+                                            <CheckBox IsChecked="{x:Bind ViewModel.Parameters.AutoRegulationHV, Mode=TwoWay}" Margin="0">Auto regulation HV</CheckBox>
+                                            <NumberBox Header="Autoregulation step:" Value="{x:Bind ViewModel.Parameters.AutoRegulationStep, Mode=TwoWay}" Minimum="0" Maximum="2000" Style="{StaticResource NumberBoxStyle}" Margin="0 0 0 0 "/>
+                                            <StackPanel Orientation="Horizontal">
+                                                <NumberBox Width="135" Header="Max correction: Up" Value="{x:Bind ViewModel.Parameters.AutoRegulationMaxCorrectionUp, Mode=TwoWay}" Minimum="0" Maximum="2000" Style="{StaticResource NumberBoxStyle}" Margin="0 18 0 0 "/>
+                                                <NumberBox Width="135" Header="Down" Value="{x:Bind ViewModel.Parameters.AutoRegulationMaxCorrectionDown, Mode=TwoWay}" Minimum="0" Maximum="2000" Style="{StaticResource NumberBoxStyle}" Margin="12 18 0 0 "/>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal">
+                                                <NumberBox Width="135" Header="Delay before: Phase 1" Value="{x:Bind ViewModel.Parameters.AutoRegulationDelayPhase1, Mode=TwoWay}" Minimum="0" Maximum="9900" Style="{StaticResource NumberBoxStyle}" Margin="0 18 0 0 "/>
+                                                <NumberBox Width="135" Header="Phase 3" Value="{x:Bind ViewModel.Parameters.AutoRegulationDelayPhase3, Mode=TwoWay}" Minimum="0" Maximum="9900" Style="{StaticResource NumberBoxStyle}" Margin="12 18 0 0 "/>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Expander>
                                     <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="Initial polarity" Margin="0 10 20 0" FontSize="16"/>
-                                    <ToggleSwitch OffContent="-" OnContent="+" FontSize="24" IsOn="{x:Bind ViewModel.Parameters.IsStartPlusPolarity, Mode=TwoWay}" />
+                                        <TextBlock Text="Initial polarity" Margin="0 10 20 0" FontSize="16"/>
+                                        <ToggleSwitch OffContent="-" OnContent="+" FontSize="24" IsOn="{x:Bind ViewModel.Parameters.IsStartPlusPolarity, Mode=TwoWay}" />
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal">
                                         <NumberBox Header="Change every" Value="{x:Bind ViewModel.Parameters.ChangePolarityStep, Mode=TwoWay}" SmallChange="1" Minimum="1" Maximum="100" Style="{StaticResource NumberBoxStyle}" Margin="0 0 0 0 "/>
                                         <NumberBox Header="Load Force [N]" Value="{x:Bind ViewModel.Parameters.LoadForce, Mode=TwoWay}" SmallChange="1" Minimum="10" Maximum="100" Style="{StaticResource NumberBoxStyle}" Margin="12 0 0 0 "/>
-                                    </StackPanel>
-                                </StackPanel>
-                                <StackPanel Width="282">
-                                    <CheckBox IsChecked="{x:Bind ViewModel.Parameters.AutoRegulationHV, Mode=TwoWay}" Margin="0">Auto regulation HV</CheckBox>
-                                    <NumberBox Header="Autoregulation step:" Value="{x:Bind ViewModel.Parameters.AutoRegulationStep, Mode=TwoWay}" Minimum="0" Maximum="2000" Style="{StaticResource NumberBoxStyle}" Margin="0 0 0 0 "/>
-                                    <StackPanel Orientation="Horizontal">
-                                        <NumberBox Width="135" Header="Max correction: UP" Value="{x:Bind ViewModel.Parameters.AutoRegulationMaxCorrectionUp, Mode=TwoWay}" Minimum="0" Maximum="2000" Style="{StaticResource NumberBoxStyle}" Margin="0 18 0 0 "/>
-                                        <NumberBox Width="135" Header="DOWN" Value="{x:Bind ViewModel.Parameters.AutoRegulationMaxCorrectionDown, Mode=TwoWay}" Minimum="0" Maximum="2000" Style="{StaticResource NumberBoxStyle}" Margin="12 18 0 0 "/>
-                                    </StackPanel>
-                                    <StackPanel Orientation="Horizontal">
-                                        <NumberBox Width="135" Header="Delay before: Phase 1" Value="{x:Bind ViewModel.Parameters.AutoRegulationDelayPhase1, Mode=TwoWay}" Minimum="0" Maximum="9900" Style="{StaticResource NumberBoxStyle}" Margin="0 18 0 0 "/>
-                                        <NumberBox Width="135" Header="Phase 3" Value="{x:Bind ViewModel.Parameters.AutoRegulationDelayPhase3, Mode=TwoWay}" Minimum="0" Maximum="9900" Style="{StaticResource NumberBoxStyle}" Margin="12 18 0 0 "/>
                                     </StackPanel>
 
                                     <Button Content="Save Parameters" HorizontalAlignment="Center" Margin="0 38 0 0" Style="{StaticResource AccentButtonStyle}"
@@ -227,8 +233,8 @@
                           HorizontalAlignment="Stretch" VerticalAlignment="Top" HorizontalContentAlignment="Stretch"
                           ScrollViewer.HorizontalScrollMode="Enabled" ScrollViewer.HorizontalScrollBarVisibility="Hidden">
                                     <ListView.ItemsPanel>
-                                        <ItemsPanelTemplate>
-                                            <ItemsWrapGrid Orientation="Horizontal" MaximumRowsOrColumns="6" />
+                                        <ItemsPanelTemplate>    
+                                            <ItemsWrapGrid Orientation="Horizontal" MaximumRowsOrColumns="10" />
                                         </ItemsPanelTemplate>
                                     </ListView.ItemsPanel>
                                 </ListView>
@@ -258,6 +264,7 @@
                                             <ColumnDefinition Width="Auto" />
                                             <ColumnDefinition Width="Auto" />
                                             <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
                                             <ColumnDefinition Width="150" MaxWidth="200"/>
                                         </Grid.ColumnDefinitions>
 
@@ -273,39 +280,44 @@
                                                    Foreground="{x:Bind ViewModel.AllDevices.PadDevice.Phase, Mode=OneWay, Converter={StaticResource PhaseToBrushConverter}}"
                                                    Style="{ThemeResource CellGridTextBlockStyle}" />
 
-                                        <TextBlock Grid.Column="2" Grid.Row="0" Text="Elapsed time" Style="{ThemeResource HeaderGridTextBlockStyle}" />
+                                        <TextBlock Grid.Column="2" Grid.Row="0" Text="Electric Field sensor" Style="{ThemeResource HeaderGridTextBlockStyle}" />
                                         <TextBlock Grid.Column="2" Grid.Row="1"
+                                                   Text="{x:Bind ViewModel.AllDevices.ElectricFieldDevice.Value, Mode=OneWay, Converter={StaticResource HighVoltageToStringConverter}}"
+                                                   Style="{ThemeResource CellGridTextBlockStyle}" />
+                                        <TextBlock Grid.Column="3" Grid.Row="0" Text="Elapsed time" Style="{ThemeResource HeaderGridTextBlockStyle}" />
+
+                                        <TextBlock Grid.Column="3" Grid.Row="1"
                                                    Text="{x:Bind ViewModel.AllDevices.PadDevice.Elapsed, Mode=OneWay, Converter={StaticResource ElapsedTimeToStringConverter}}"
                                                    Style="{ThemeResource CellGridTextBlockStyle}" />
 
-                                        <TextBlock Grid.Column="3" Grid.Row="0" Text="Temperature" Style="{ThemeResource HeaderGridTextBlockStyle}" />
-                                        <TextBlock Grid.Column="3" Grid.Row="1" Text="{x:Bind ViewModel.AllDevices.TemperatureDevice.Temperature, Mode=OneWay, Converter={StaticResource FloatToTemperatureStringConverter}}"
+                                        <TextBlock Grid.Column="4" Grid.Row="0" Text="Temperature" Style="{ThemeResource HeaderGridTextBlockStyle}" />
+                                        <TextBlock Grid.Column="4" Grid.Row="1" Text="{x:Bind ViewModel.AllDevices.TemperatureDevice.Temperature, Mode=OneWay, Converter={StaticResource FloatToTemperatureStringConverter}}"
                                                     Foreground="{x:Bind ViewModel.AllDevices.TemperatureDevice.Temperature, Mode=OneWay, Converter={StaticResource TemperatureToBrushConverter}}"
                                                     Style="{ThemeResource CellGridTextBlockStyle}" />
 
-                                        <TextBlock Grid.Column="4" Grid.Row="0" Text="Humidity" Style="{ThemeResource HeaderGridTextBlockStyle}" />
-                                        <TextBlock Grid.Column="4" Grid.Row="1" Text="{x:Bind ViewModel.AllDevices.HumidityDevice.Humidity, Mode=OneWay, Converter={StaticResource FloatToHumidityStringConverter}}"
+                                        <TextBlock Grid.Column="5" Grid.Row="0" Text="Humidity" Style="{ThemeResource HeaderGridTextBlockStyle}" />
+                                        <TextBlock Grid.Column="5" Grid.Row="1" Text="{x:Bind ViewModel.AllDevices.HumidityDevice.Humidity, Mode=OneWay, Converter={StaticResource FloatToHumidityStringConverter}}"
                                                     Foreground="{x:Bind ViewModel.AllDevices.HumidityDevice.Humidity, Mode=OneWay, Converter={StaticResource HumidityToBrushConverter}}"
                                                     Style="{ThemeResource CellGridTextBlockStyle}" />
 
-                                        <TextBlock Grid.Column="5" Grid.Row="0" Text="Weight" Style="{ThemeResource HeaderGridTextBlockStyle}" />
-                                        <TextBlock Grid.Column="5" Grid.Row="1" Text="{x:Bind ViewModel.AllDevices.ScaleDevice.Weight, Mode=OneWay, Converter={StaticResource IntToGramsStringConverter}}"
+                                        <TextBlock Grid.Column="6" Grid.Row="0" Text="Weight" Style="{ThemeResource HeaderGridTextBlockStyle}" />
+                                        <TextBlock Grid.Column="6" Grid.Row="1" Text="{x:Bind ViewModel.AllDevices.ScaleDevice.Weight, Mode=OneWay, Converter={StaticResource IntToGramsStringConverter}}"
                                                    Foreground="{x:Bind ViewModel.AllDevices.ScaleDevice.IsStable, Mode=OneWay, Converter={StaticResource BoolToGreenRedColorConverter}}"
                                                    Style="{ThemeResource CellGridTextBlockStyle}" />
 
-                                        <StackPanel Orientation="Vertical" Grid.Column="6" Grid.RowSpan="2">
+                                        <StackPanel Orientation="Vertical" Grid.Column="7" Grid.RowSpan="2">
                                             <Button Content="Tare" Command="{x:Bind ViewModel.ScaleTareCommand}" Width="100" Margin="0" />
                                             <Button Content="Zero" Command="{x:Bind ViewModel.ScaleZeroCommand}" Width="100" Margin="0 10 0 0" />
                                         </StackPanel>
 
-                                        <TextBlock Grid.Column="7" Grid.Row="0" Text="Test #" Style="{ThemeResource HeaderGridTextBlockStyle}" />
-                                        <TextBlock Grid.Column="7" Grid.Row="1"  HorizontalAlignment="Left" Style="{ThemeResource CellGridTextBlockStyle}">
+                                        <TextBlock Grid.Column="8" Grid.Row="0" Text="Test #" Style="{ThemeResource HeaderGridTextBlockStyle}" />
+                                        <TextBlock Grid.Column="8" Grid.Row="1"  HorizontalAlignment="Left" Style="{ThemeResource CellGridTextBlockStyle}">
                                             <Run Text="{x:Bind ViewModel.Parameters.Counter, Mode=OneWay}" />
                                             <Run Text="/" />
                                             <Run Text="{x:Bind ViewModel.Parameters.Total, Mode=OneWay}" />
                                         </TextBlock>
 
-                                        <MediaPlayerElement Grid.Column="8" Grid.RowSpan="2"
+                                        <MediaPlayerElement Grid.Column="9" Grid.RowSpan="2"
                                                             Source="{x:Bind CameraPlayback, Mode=OneWay}"
                                                             Stretch="UniformToFill" AutoPlay="True"/>
 

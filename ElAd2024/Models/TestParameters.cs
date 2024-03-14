@@ -37,6 +37,9 @@ public partial class TestParameters : ObservableRecipient
     [ObservableProperty] private int highVoltagePhase3Hi = 8000;
     [ObservableProperty] private bool highVoltagePhase3MaxToMin = false;
 
+    [ObservableProperty] private int durationPhase5 = 1000;
+    [ObservableProperty] private int highVoltagePhase5 = 3000;
+
     [ObservableProperty] private int loadForce = 30;
     [ObservableProperty] private bool autoRegulationHV = true;
     [ObservableProperty] private int autoRegulationDelayPhase1 = 300;

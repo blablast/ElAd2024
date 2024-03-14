@@ -8,22 +8,70 @@ using System.Threading.Tasks;
 namespace ElAd2024.Models.Database;
 public class Test
 {
-    public int Id { get; set; }
-    public DateTime Date { get; set; }
-    public int LoadForce { get; set; }
-    public int Phase1Value { get; set; }
-    public int Phase1Duration { get; set; }
-    public int Phase2Duration { get; set; }
-    public int Phase3Value { get; set; }
-    public int Phase3Duration { get; set; }
-    public bool IsPlusPolarity { get; set; }
-    public bool AutoRegulation { get; set; }
-    public int AutoRegulationDelayPhase1 { get; set; }
-    public int AutoRegulationDelayPhase3 { get; set; }
-    public int AutoRegulationStep { get; set; }
-    public int AutoRegulationMaxCorrectionUp { get; set; }
-    public int AutoRegulationMaxCorrectionDown { get; set; }
-    public int BatchId { get; set; }
+    public int Id
+    {
+        get; set;
+    }
+    public DateTime Date
+    {
+        get; set;
+    }
+    public int LoadForce
+    {
+        get; set;
+    }
+    public int Phase1Value
+    {
+        get; set;
+    }
+    public int Phase1Duration
+    {
+        get; set;
+    }
+    public int Phase2Duration
+    {
+        get; set;
+    }
+    public int Phase3Value
+    {
+        get; set;
+    }
+    public int Phase3Duration
+    {
+        get; set;
+    }
+    public bool IsPlusPolarity
+    {
+        get; set;
+    }
+    public bool AutoRegulation
+    {
+        get; set;
+    }
+    public int AutoRegulationDelayPhase1
+    {
+        get; set;
+    }
+    public int AutoRegulationDelayPhase3
+    {
+        get; set;
+    }
+    public int AutoRegulationStep
+    {
+        get; set;
+    }
+    public int AutoRegulationMaxCorrectionUp
+    {
+        get; set;
+    }
+    public int AutoRegulationMaxCorrectionDown
+    {
+        get; set;
+    }
+    public int BatchId
+    {
+        get; set;
+    }
     public Batch Batch { get; set; } = default!;
 
     public virtual ICollection<Temperature> Temperatures { get; set; } = [];
@@ -36,16 +84,29 @@ public class Test
     public ICollection<TestStep> TestSteps { get; set; } = [];
 
     [NotMapped]
-    public virtual List<Voltage> VoltagesChart => Voltages.Where(voltage => voltage.Phase > 0).OrderBy(v => v.Elapsed).Take(91).ToList();
+    public virtual List<Voltage> VoltagesChart
+    {
+        get
+        {
+            var retVol = Voltages.Where(voltage => voltage.Phase > 0).OrderBy(v => v.Elapsed).Take(350).ToList();
+            // if retVol.Count < 200 add default data
+            for (var i = retVol.Count -1; i < 350; i++)
+            {
+                retVol.Add(new Voltage { Elapsed = i, Phase = 0, Value = null });
+            }
+            return retVol;
+        }
+    }
 
     [NotMapped]
     public double Humidity => (Humidities.Count == 0) ? 0 : (double)(Humidities.FirstOrDefault()?.Value ?? 0.0);
     [NotMapped]
     public double Temperature => (Temperatures.Count == 0) ? 0 : (double)(Temperatures.FirstOrDefault()?.Value ?? 0.0);
 
-    [NotMapped] public int EndOfPhase1 => Phase1Duration / 100;
-    [NotMapped] public int EndOfPhase2 => EndOfPhase1 + Phase2Duration / 100;
-    [NotMapped] public int EndOfPhase3 => EndOfPhase2 + Phase3Duration / 100;
+    [NotMapped] public int EndOfPhase1 => Voltages?.Where(voltage => voltage.Phase == 1).Max(voltage => voltage.Elapsed) ?? 0;
+    [NotMapped] public int EndOfPhase2 => Voltages.Where(voltage => voltage.Phase == 2).Max(voltage => voltage.Elapsed);
+    [NotMapped] public int EndOfPhase3 => Voltages.Where(voltage => voltage.Phase == 3).Max(voltage => voltage.Elapsed);
+    [NotMapped] public int EndOfPhase4 => Voltages.Where(voltage => voltage.Phase == 4).Max(voltage => voltage.Elapsed);
     [NotMapped] public int MaxVoltage => IsPlusPolarity ? Phase1Value : Phase3Value;
     [NotMapped] public int MinVoltage => IsPlusPolarity ? -Phase3Value : -Phase1Value;
 
