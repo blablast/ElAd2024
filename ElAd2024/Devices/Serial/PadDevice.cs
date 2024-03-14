@@ -150,7 +150,6 @@ public partial class PadDevice : BaseSerialDevice, IPadDevice
 
     protected async override void ProcessDataLine(string dataLine)
     {
-        Debug.WriteLine($"Received data line: {dataLine}");
         if (dataLine.StartsWith("A:"))
         {
             var parts = dataLine[2..].Split(',');
@@ -182,18 +181,19 @@ public partial class PadDevice : BaseSerialDevice, IPadDevice
                 }));
             }
         }
-        else if (Commands.Count > 0)
+        else
         {
+            Debug.WriteLine($"Received data line: {dataLine}");
             var sendNext = false;
-            Debug.WriteLine($"dataLine: [{dataLine}], Commands.Peek(): [{Commands.Peek()}]");
+            Debug.WriteLine($"dataLine: [{dataLine}], Commands.Peek(): [{(Commands.Count > 0 ? Commands.Peek() : "Commands EMPTY")}]");
 
             if (
-                dataLine.StartsWith("OK") &&  dataLine[3..] == Commands.Peek()
-                || (dataLine == "OK PUL ST+" && Commands.Peek() == "+")
-                || (dataLine == "OK PUL ST-" && Commands.Peek() == "-")
-                || (dataLine == "OK PUS DRP" && Commands.Peek() == "D")
-                || (dataLine == "OK REL SBY" && Commands.Peek() == "R")
-                || (dataLine == "R" && Commands.Peek() == "R")
+                dataLine.StartsWith("OK") && Commands.Count > 0 && dataLine[3..] == Commands.Peek()
+                || (dataLine == "OK PUL ST+" && Commands.Count > 0 && Commands.Peek() == "+")
+                || (dataLine == "OK PUL ST-" && Commands.Count > 0 && Commands.Peek() == "-")
+                || (dataLine == "OK PUS DRP" && Commands.Count > 0 && Commands.Peek() == "D")
+                || (dataLine == "OK REL SBY" && Commands.Count> 0 && Commands.Peek() == "R")
+                || (dataLine == "R" && Commands.Count > 0 && Commands.Peek() == "R")
               )
             {
                 Debug.WriteLine($"OK: {Commands.Peek()}");
@@ -202,15 +202,13 @@ public partial class PadDevice : BaseSerialDevice, IPadDevice
             }
             else
             {
-                sendNext = (dataLine.StartsWith("OK") || dataLine.StartsWith("ERR"));
-                if (sendNext)
-                {
-                    Debug.WriteLine($"Sending next command ({Commands.Peek()}), because: {dataLine}");
-                }
+                Debug.WriteLine($"ERR: {(Commands.Count > 0 ? Commands.Peek() : "??")}");
+                sendNext = Commands.Count > 0 && (dataLine.StartsWith("OK") || dataLine.StartsWith("ERR"));
 
             }
             if (sendNext)
             {
+                Debug.WriteLine($"Sending next command ({(Commands.Count > 0 ? Commands.Peek() : "??")}), because: {dataLine}");
                 await Task.Delay(10);
                 await base.SendDataAsync(Commands.Peek());
             }
