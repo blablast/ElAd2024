@@ -19,7 +19,6 @@ public partial class RobotDevice : ObservableRecipient, IRobotDevice
 
     public async Task InitializeAsync()
     {
-        Debug.WriteLine($"RobotService initialized. Connecting status: {IsConnected}.");
         await Task.CompletedTask;
     }
 

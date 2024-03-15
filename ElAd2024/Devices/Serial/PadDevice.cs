@@ -1,4 +1,5 @@
-﻿using System.Collections.ObjectModel;
+﻿using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -13,7 +14,9 @@ public partial class PadDevice : BaseSerialDevice, IPadDevice
     private readonly int dataCollectionSize;
     private readonly DispatcherQueue dispatcherQueue;
 
-    private List<(int Number, int Value)> previousParameters = [];
+    private readonly List<(int Number, int Value)> previousParameters = [];
+    private readonly Dictionary<string, string> shortCommands = new() { ["REL SBY"] = "R", ["PUL ST+"] = "+", ["PUL ST-"] = "-", ["PUS DRP"] = "D" };
+
     public Queue<string> Commands { get; set; } = [];
 
 
@@ -32,19 +35,17 @@ public partial class PadDevice : BaseSerialDevice, IPadDevice
         DeviceService.Delay = 20;
     }
 
+
+
     protected async override Task OnConnected()
     {
-        //await SendDataAsync("REL SBY");
         await ConsoleEcho(false);
         await GreenDebug(false);
-        await SendDataAsync("R");
+        await SendRelSby();
     }
 
-    private async Task GreenDebug(bool isOn = false)
-        => await SendDataAsync($"SET 12 {(isOn ? 1 : 0)}");
-    private async Task ConsoleEcho(bool isOn = false)
-        => await SendDataAsync($"SET 13 {(isOn ? 0 : 1)}");
-
+    private async Task GreenDebug(bool isOn = false) => await SendSet(12, $"{(isOn ? 1 : 0)}");
+    private async Task ConsoleEcho(bool isOn = false) => await SendSet(13, $"{(isOn ? 0 : 1)}");
 
     public ObservableCollection<Voltage> Voltages { get; set; } = [];
 
@@ -59,11 +60,15 @@ public partial class PadDevice : BaseSerialDevice, IPadDevice
         {
             if (!previousParameters.Any(p => p.Number == parameter.Number && p.Value == parameter.Value))
             {
-                await SendDataAsync($"SET {parameter.Number} {parameter.Value}");
+                await SendSet(parameter.Number, parameter.Value.ToString());
+                await Task.Delay(DeviceService.Delay);
             }
         }
         previousParameters.Clear();
-        parametersList.ForEach(previousParameters.Add);
+        foreach (var parameter in parametersList)
+        {
+            previousParameters.Add(parameter);
+        }
 
         // parametersList.ForEach(async parameter => await SendDataAsync($"SET {parameter.Number} {parameter.Value}"));
         await Task.CompletedTask;
@@ -71,31 +76,15 @@ public partial class PadDevice : BaseSerialDevice, IPadDevice
 
     public async Task StartCycle(bool isPlusPolarity, bool force = false)
     {
-
-
         InitializeChartDataCollection();
-        if (force)
-        {
-            Commands.Clear();
-        }
-
-        await SendDataAsync(isPlusPolarity switch
-        {
-            true => "+",
-            false => "-"
-            //true => "PUL ST+",
-            //false => "PUL ST-"
-        });
+        if (force) { Commands.Clear(); }
+        if (isPlusPolarity) { await SendStPlus(); } else { await SendStMinus(); }
     }
 
     public async Task StopCycle(bool force = true)
     {
-        if (force)
-        {
-            Commands.Clear();
-        }
-        //await SendDataAsync("PUS DRP");
-        await SendDataAsync("D");
+        if (force) { Commands.Clear(); }
+        await SendPusDrp();
     }
 
     public async Task ReleaseFabric(int wait = 1000, bool force = true)
@@ -103,7 +92,6 @@ public partial class PadDevice : BaseSerialDevice, IPadDevice
         await StopCycle(force);
         await Task.Delay(100);
         await Task.Delay((int)wait);
-        //await SendDataAsync("REL SBY");
         await Stop();
 
         dispatcherQueue.TryEnqueue(() =>
@@ -131,21 +119,36 @@ public partial class PadDevice : BaseSerialDevice, IPadDevice
             }
         });
 
+
+    private async Task SendSet(int index, string value) => await SendDataAsync($"SET {index} {value}");
+    private async Task SendStPlus() => await SendDataAsync("PUL ST+");
+    private async Task SendStMinus() => await SendDataAsync("PUL ST-");
+    private async Task SendPusDrp() => await SendDataAsync("PUS DRP");
+    private async Task SendRelSby() => await SendDataAsync("REL SBY");
+
+
+
+    private async Task Send()
+    {
+        if (Commands.Count > 0)
+        {
+            await base.SendDataAsync(shortCommands.ContainsKey(Commands.Peek()) ? shortCommands[Commands.Peek()] : Commands.Peek());
+        }
+    }
+
     protected async override Task SendDataAsync(string data)
     {
         Commands.Enqueue(data);
         if (Commands.Count == 1)
         {
-            Debug.WriteLine($"Sending data: {Commands.Peek()}");
-            await base.SendDataAsync(Commands.Peek());
+            await Send();
         }
     }
 
     public async override Task Stop()
     {
         Commands.Clear();
-        //await SendDataAsync("REL SBY");
-        await SendDataAsync("R");
+        await SendRelSby();
     }
 
     protected async override void ProcessDataLine(string dataLine)
@@ -181,36 +184,17 @@ public partial class PadDevice : BaseSerialDevice, IPadDevice
                 }));
             }
         }
-        else
+        else if (Commands.Count > 0)
         {
-            Debug.WriteLine($"Received data line: {dataLine}");
-            var sendNext = false;
-            Debug.WriteLine($"dataLine: [{dataLine}], Commands.Peek(): [{(Commands.Count > 0 ? Commands.Peek() : "Commands EMPTY")}]");
-
-            if (
-                dataLine.StartsWith("OK") && Commands.Count > 0 && dataLine[3..] == Commands.Peek()
-                || (dataLine == "OK PUL ST+" && Commands.Count > 0 && Commands.Peek() == "+")
-                || (dataLine == "OK PUL ST-" && Commands.Count > 0 && Commands.Peek() == "-")
-                || (dataLine == "OK PUS DRP" && Commands.Count > 0 && Commands.Peek() == "D")
-                || (dataLine == "OK REL SBY" && Commands.Count> 0 && Commands.Peek() == "R")
-                || (dataLine == "R" && Commands.Count > 0 && Commands.Peek() == "R")
-              )
+            if (dataLine.StartsWith("OK") && dataLine.Length > 4 && dataLine[3..] == Commands.Peek())
             {
-                Debug.WriteLine($"OK: {Commands.Peek()}");
                 Commands.Dequeue();
-                sendNext = Commands.Count > 0;
+                await Send();
             }
-            else
+            else if (dataLine.StartsWith("OK") || dataLine.StartsWith("ERR"))
             {
-                Debug.WriteLine($"ERR: {(Commands.Count > 0 ? Commands.Peek() : "??")}");
-                sendNext = Commands.Count > 0 && (dataLine.StartsWith("OK") || dataLine.StartsWith("ERR"));
-
-            }
-            if (sendNext)
-            {
-                Debug.WriteLine($"Sending next command ({(Commands.Count > 0 ? Commands.Peek() : "??")}), because: {dataLine}");
-                await Task.Delay(10);
-                await base.SendDataAsync(Commands.Peek());
+                Debug.WriteLine($"dataLine.StartsWith(\"OK\") || dataLine.StartsWith(\"ERR\") : {dataLine}, {(Commands.Count>0 ? Commands.Peek() : "")}");
+                await Send();
             }
         }
     }
