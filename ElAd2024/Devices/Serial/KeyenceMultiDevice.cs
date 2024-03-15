@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using System.Diagnostics;
+using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using ElAd2024.Contracts.Devices;
 using Microsoft.UI.Dispatching;
@@ -47,7 +48,14 @@ public partial class KeyenceMultiDevice : BaseSerialDevice, IElectricFieldDevice
             var parts = dataLine.Split(',');
             if (parts.Length == 3 && double.TryParse(parts[2], NumberStyles.Any, CultureInfo.InvariantCulture, out var electricFieldValue))
             {
-                Value = (int)((float)electricFieldValue * 1000);
+                try
+                {
+                    Value = (int)((float)electricFieldValue * 1000);
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine(ex.Message);
+                }
                 //dispatcherQueue.TryEnqueue(() => { Value = (int)((float)electricFieldValue*1000); });
             }
         }
