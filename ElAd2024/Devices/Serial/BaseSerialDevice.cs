@@ -13,11 +13,7 @@ public partial class BaseSerialDevice : ObservableRecipient, IDevice
 
     [ObservableProperty] private bool isConnected;
     [ObservableProperty] private bool isSimulated = false;
-    public SerialPortInfo? PortInfo
-    {
-        get;
-        set;
-    }
+    public SerialPortInfo? PortInfo { get; set; }
 
 
     public virtual Task InitializeAsync() => throw new NotImplementedException();
@@ -85,7 +81,6 @@ public partial class BaseSerialDevice : ObservableRecipient, IDevice
     public virtual Task Stop() => Task.CompletedTask; // Hook for derived classes.
     protected virtual Task OnDisconnecting() => Task.CompletedTask; // Hook for derived classes.
     protected virtual Task OnDisconnected() => Task.CompletedTask; // Hook for derived classes.
-
 
     private void OnDataReceived(string data)
     {
